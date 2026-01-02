@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crash Game Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+        .balance-card { background: #1e293b; padding: 15px 30px; border-radius: 15px; border: 1px solid #334155; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        #multiplier { font-size: 4rem; font-weight: bold; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.4); margin: 20px 0; }
+        .bet-section { width: 90%; max-width: 400px; background: #1e293b; padding: 20px; border-radius: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: transform 0.2s, opacity 0.2s; }
+        .btn-bet { background: #22c55e; color: white; }
+        .btn-collect { background: #eab308; color: white; display: none; }
+        .btn-settings { background: #334155; color: #cbd5e1; font-size: 0.9rem; }
+        .btn:active { transform: scale(0.98); }
+        hr { border: 0; border-top: 1px solid #334155; width: 100%; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="balance-card">
+        <span style="color: #94a3b8; font-size: 0.9rem;">My Balance</span><br>
+        <span id="balance" style="font-size: 1.5rem; font-weight: bold;">10,000 Pts</span>
+    </div>
+
+    <div id="multiplier">1.00x</div>
+
+    <div class="bet-section">
+        <input type="number" id="betInput" placeholder="Enter Bet Points" style="width: 90%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; margin-bottom: 10px; font-size: 1rem;">
+        
+        <button class="btn btn-bet" id="betBtn" onclick="placeBet()">PLACE BET</button>
+        <button class="btn btn-collect" id="collectBtn" onclick="collectWin()">COLLECT</button>
+
+        <hr>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn btn-settings" onclick="triggerAdAction('Deposit')">Deposit</button>
+            <button class="btn btn-settings" onclick="triggerAdAction('Withdraw')">Withdraw</button>
+            <button class="btn btn-settings" onclick="triggerAdAction('History')">History</button>
+            <button class="btn btn-settings" onclick="triggerAdAction('Profile')">Profile</button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // তোর অ্যাড লিঙ্কগুলো এখানে বসানো হলো
+        const adLink1 = "https://otieu.com/4/10315373"; // Adsterra
+        const adLink2 = "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57"; // Monetag
+
+        // অ্যাড কন্ট্রোল সিস্টেম
+        function triggerAdAction(actionName) {
+            // ১ নম্বর অ্যাড ওপেন হবে
+            window.open(adLink1, '_blank');
+
+            // ২য় অ্যাড ওপেন করার জন্য ছোট ডিলে বা ইউজার কনফার্মেশন (যাতে ব্রাউজার ব্লক না করে)
+            setTimeout(() => {
+                window.open(adLink2, '_blank');
+                
+                // অ্যাড শেষ হওয়ার পর যে অপশনটি ইউজার ক্লিক করেছিল তা ওপেন হবে
+                setTimeout(() => {
+                    alert(actionName + " Section is now loading...");
+                    // এখানে তোর পরবর্তী পেজ বা পপআপ কোড আসবে
+                }, 500);
+            }, 800);
+        }
+
+        // গেমের ডামি লজিক (কপি পেস্টের জন্য রেডি)
+        function placeBet() {
+            document.getElementById('betBtn').style.display = 'none';
+            document.getElementById('collectBtn').style.display = 'block';
+            console.log("Bet Placed");
+        }
+
+        function collectWin() {
+            document.getElementById('betBtn').style.display = 'block';
+            document.getElementById('collectBtn').style.display = 'none';
+            console.log("Collected");
+        }
+    </script>
+</body>
+   </html>
