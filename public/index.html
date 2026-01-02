@@ -6,104 +6,123 @@
     <title>Crash Game Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #0b0e11; color: #eaecef; font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
+        body { background: #0b0e11; color: #eaecef; font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
         /* টপ ব্যালেন্স বার */
-        .top-bar { width: 100%; background: #1e2329; padding: 10px; display: flex; justify-content: space-around; align-items: center; border-bottom: 1px solid #333; position: fixed; top: 0; z-index: 100; }
-        .user-info { font-size: 14px; color: #f0b90b; }
-        .balance-info { font-weight: bold; font-size: 16px; color: #fff; }
+        .top-bar { width: 100%; background: #1e2329; padding: 8px 0; display: flex; justify-content: space-around; align-items: center; border-bottom: 1px solid #333; position: fixed; top: 0; z-index: 100; font-size: 14px; }
+        .user-info { color: #f0b90b; font-weight: bold; }
 
-        /* গেম এরিয়া */
-        .game-container { margin-top: 80px; text-align: center; width: 90%; }
-        #multiplier { font-size: 50px; color: #02c076; margin: 20px 0; font-weight: bold; }
+        /* মাঝখানে প্লেন অ্যানিমেশন এরিয়া */
+        .animation-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; width: 100%; }
+        #multiplier { font-size: 60px; color: #02c076; font-weight: bold; margin-bottom: 20px; z-index: 2; }
+        
+        /* প্লেন অ্যানিমেশন */
+        .plane { font-size: 50px; position: absolute; transition: transform 0.1s; animation: fly 3s infinite ease-in-out; }
+        @keyframes fly {
+            0% { transform: translate(-50px, 0px) rotate(0deg); }
+            50% { transform: translate(50px, -30px) rotate(-5deg); }
+            100% { transform: translate(-50px, 0px) rotate(0deg); }
+        }
 
-        /* বাটন স্টাইল */
-        .bet-input { width: 100%; padding: 12px; background: #2b3139; border: 1px solid #474d57; color: white; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .btn-bet { background: #02c076; color: white; }
-        .btn-menu { background: #2b3139; color: #eaecef; font-size: 13px; margin: 5px 0; }
+        /* নিচের কন্ট্রোল প্যানেল */
+        .bottom-panel { background: #1e2329; width: 100%; padding: 15px; border-radius: 20px 20px 0 0; box-sizing: border-box; border-top: 1px solid #333; position: fixed; bottom: 0; z-index: 100; }
+        .bet-input { width: 100%; padding: 12px; background: #2b3139; border: 1px solid #474d57; color: white; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-bet { background: #02c076; color: white; font-size: 18px; margin-bottom: 15px; }
+        .btn-menu { background: #2b3139; color: #eaecef; font-size: 14px; }
+        .grid-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        /* হিডেন সেকশন (ডিপোজিট, উইথড্র ইত্যাদি) */
-        .hidden-section { display: none; background: #1e2329; padding: 20px; border-radius: 10px; margin-top: 20px; width: 100%; box-sizing: border-box; border: 1px solid #f0b90b; }
-        .close-btn { background: #f84960; padding: 5px 10px; border-radius: 3px; font-size: 12px; float: right; cursor: pointer; }
+        /* পপআপ সেকশন */
+        .popup-section { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1e2329; width: 90%; padding: 20px; border-radius: 15px; border: 2px solid #f0b90b; z-index: 200; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .close-btn { background: #f84960; padding: 5px 10px; border-radius: 5px; float: right; cursor: pointer; color: white; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
         <div class="user-info">👤 <span id="userName">User</span></div>
-        <div class="balance-info">💰 <span id="balance">10,000</span> Pts</div>
+        <div class="balance-info">💰 <span id="balanceDisplay">10,000</span> Pts</div>
     </div>
 
-    <div class="game-container">
+    <div class="animation-container">
         <div id="multiplier">1.00x</div>
-        
-        <input type="number" id="betAmount" class="bet-input" placeholder="Enter Amount">
+        <div class="plane">✈️</div>
+    </div>
+
+    <div class="bottom-panel">
+        <input type="number" id="betAmount" class="bet-input" placeholder="Enter Points">
         <button class="btn btn-bet" onclick="alert('Bet Placed!')">PLACE BET</button>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
-            <button class="btn btn-menu" onclick="triggerAction('Deposit')">Deposit</button>
-            <button class="btn btn-menu" onclick="triggerAction('Withdraw')">Withdraw</button>
-            <button class="btn btn-menu" onclick="triggerAction('History')">History</button>
-            <button class="btn btn-menu" onclick="triggerAction('Profile')">Profile</button>
+        <div class="grid-menu">
+            <button class="btn btn-menu" onclick="triggerAd('Deposit')">Deposit</button>
+            <button class="btn btn-menu" onclick="triggerAd('Withdraw')">Withdraw</button>
+            <button class="btn btn-menu" onclick="triggerAd('History')">History</button>
+            <button class="btn btn-menu" onclick="triggerAd('Profile')">Profile</button>
         </div>
+    </div>
 
-        <div id="DepositSection" class="hidden-section">
-            <span class="close-btn" onclick="closeAll()">X</span>
-            <h3>Deposit Points</h3>
-            <p style="font-size: 12px;">নিচের নম্বরে টাকা পাঠিয়ে লাস্ট ৪ ডিজিট দিন:</p>
-            <p>bKash: 01XXXXXXXXX</p>
-            <input type="text" class="bet-input" placeholder="Last 4 Digits">
-            <button class="btn btn-bet" onclick="alert('Request Sent!')">Submit</button>
-        </div>
-
-        <div id="WithdrawSection" class="hidden-section">
-            <span class="close-btn" onclick="closeAll()">X</span>
-            <h3>Withdraw Points</h3>
-            <input type="text" class="bet-input" placeholder="Wallet Address">
-            <input type="number" class="bet-input" placeholder="Points">
-            <button class="btn btn-bet" style="background:#f84960">Withdraw Now</button>
-        </div>
+    <div id="actionPopup" class="popup-section">
+        <span class="close-btn" onclick="closePopup()">X</span>
+        <h3 id="popupTitle">Title</h3>
+        <div id="popupContent"></div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // টেলিগ্রাম থেকে নাম সেট করা
+        // নাম সেট করা
         const user = tg.initDataUnsafe?.user;
-        if (user) {
-            document.getElementById('userName').innerText = user.first_name;
-        }
+        document.getElementById('userName').innerText = user ? user.first_name : "Player";
 
-        const adLink1 = "https://otieu.com/4/10315373"; 
-        const adLink2 = "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57";
+        // অ্যাড লিঙ্ক
+        const ads = [
+            "https://otieu.com/4/10315373",
+            "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57"
+        ];
 
-        function triggerAction(sectionId) {
-            // ১ নম্বর অ্যাড ওপেন
-            window.open(adLink1, '_blank');
-            
-            // ছোট একটা মেসেজ যাতে ইউজার বিরক্ত না হয়
-            tg.showConfirm("Next step is ready. Open now?", (ok) => {
+        function triggerAd(type) {
+            // অ্যাড লুপ বন্ধ করতে কনফার্মেশন ব্যবহার
+            tg.showConfirm(`View Ad to unlock ${type}?`, (ok) => {
                 if(ok) {
-                    window.open(adLink2, '_blank');
-                    showSection(sectionId);
-                } else {
-                    showSection(sectionId);
+                    // একটা একটা করে অ্যাড ওপেন হবে
+                    window.open(ads[0], '_blank');
+                    setTimeout(() => {
+                        window.open(ads[1], '_blank');
+                        openPanel(type);
+                    }, 1000);
                 }
             });
         }
 
-        function showSection(id) {
-            closeAll();
-            document.getElementById(id + 'Section').style.display = 'block';
-            window.scrollTo(0, document.body.scrollHeight);
+        function openPanel(type) {
+            const popup = document.getElementById('actionPopup');
+            const title = document.getElementById('popupTitle');
+            const content = document.getElementById('popupContent');
+            
+            title.innerText = type;
+            popup.style.display = 'block';
+
+            if(type === 'Deposit') {
+                content.innerHTML = `<p>bKash: 01XXXXXXXXX</p><input type='text' class='bet-input' placeholder='TxID or Last 4 Digits'><button class='btn btn-bet' onclick='closePopup()'>Submit</button>`;
+            } else if(type === 'Withdraw') {
+                content.innerHTML = `<input type='text' class='bet-input' placeholder='Wallet Address'><input type='number' class='bet-input' placeholder='Points'><button class='btn btn-bet' style='background:#f84960' onclick='closePopup()'>Confirm</button>`;
+            } else {
+                content.innerHTML = `<p>No data found.</p>`;
+            }
         }
 
-        function closeAll() {
-            document.getElementById('DepositSection').style.display = 'none';
-            document.getElementById('WithdrawSection').style.display = 'none';
+        function closePopup() {
+            document.getElementById('actionPopup').style.display = 'none';
         }
+
+        // ডামি মাল্টিপ্লায়ার রান (পরে ফায়ারবেস দিয়ে রিয়েল হবে)
+        let count = 1.00;
+        setInterval(() => {
+            count += 0.01;
+            document.getElementById('multiplier').innerText = count.toFixed(2) + "x";
+            if(count > 2.50) count = 1.00; // রিসেট লজিক
+        }, 100);
     </script>
 </body>
 </html>
