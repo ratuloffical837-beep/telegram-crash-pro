@@ -6,40 +6,63 @@
     <title>Crash Game Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; }
-        .balance-card { background: #1e293b; padding: 15px 30px; border-radius: 15px; border: 1px solid #334155; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        #multiplier { font-size: 4rem; font-weight: bold; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.4); margin: 20px 0; }
-        .bet-section { width: 90%; max-width: 400px; background: #1e293b; padding: 20px; border-radius: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: transform 0.2s, opacity 0.2s; }
-        .btn-bet { background: #22c55e; color: white; }
-        .btn-collect { background: #eab308; color: white; display: none; }
-        .btn-settings { background: #334155; color: #cbd5e1; font-size: 0.9rem; }
-        .btn:active { transform: scale(0.98); }
-        hr { border: 0; border-top: 1px solid #334155; width: 100%; margin: 20px 0; }
+        body { background: #0b0e11; color: #eaecef; font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
+        
+        /* টপ ব্যালেন্স বার */
+        .top-bar { width: 100%; background: #1e2329; padding: 10px; display: flex; justify-content: space-around; align-items: center; border-bottom: 1px solid #333; position: fixed; top: 0; z-index: 100; }
+        .user-info { font-size: 14px; color: #f0b90b; }
+        .balance-info { font-weight: bold; font-size: 16px; color: #fff; }
+
+        /* গেম এরিয়া */
+        .game-container { margin-top: 80px; text-align: center; width: 90%; }
+        #multiplier { font-size: 50px; color: #02c076; margin: 20px 0; font-weight: bold; }
+
+        /* বাটন স্টাইল */
+        .bet-input { width: 100%; padding: 12px; background: #2b3139; border: 1px solid #474d57; color: white; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .btn-bet { background: #02c076; color: white; }
+        .btn-menu { background: #2b3139; color: #eaecef; font-size: 13px; margin: 5px 0; }
+
+        /* হিডেন সেকশন (ডিপোজিট, উইথড্র ইত্যাদি) */
+        .hidden-section { display: none; background: #1e2329; padding: 20px; border-radius: 10px; margin-top: 20px; width: 100%; box-sizing: border-box; border: 1px solid #f0b90b; }
+        .close-btn { background: #f84960; padding: 5px 10px; border-radius: 3px; font-size: 12px; float: right; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="balance-card">
-        <span style="color: #94a3b8; font-size: 0.9rem;">My Balance</span><br>
-        <span id="balance" style="font-size: 1.5rem; font-weight: bold;">10,000 Pts</span>
+    <div class="top-bar">
+        <div class="user-info">👤 <span id="userName">User</span></div>
+        <div class="balance-info">💰 <span id="balance">10,000</span> Pts</div>
     </div>
 
-    <div id="multiplier">1.00x</div>
-
-    <div class="bet-section">
-        <input type="number" id="betInput" placeholder="Enter Bet Points" style="width: 90%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; margin-bottom: 10px; font-size: 1rem;">
+    <div class="game-container">
+        <div id="multiplier">1.00x</div>
         
-        <button class="btn btn-bet" id="betBtn" onclick="placeBet()">PLACE BET</button>
-        <button class="btn btn-collect" id="collectBtn" onclick="collectWin()">COLLECT</button>
+        <input type="number" id="betAmount" class="bet-input" placeholder="Enter Amount">
+        <button class="btn btn-bet" onclick="alert('Bet Placed!')">PLACE BET</button>
 
-        <hr>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-menu" onclick="triggerAction('Deposit')">Deposit</button>
+            <button class="btn btn-menu" onclick="triggerAction('Withdraw')">Withdraw</button>
+            <button class="btn btn-menu" onclick="triggerAction('History')">History</button>
+            <button class="btn btn-menu" onclick="triggerAction('Profile')">Profile</button>
+        </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="btn btn-settings" onclick="triggerAdAction('Deposit')">Deposit</button>
-            <button class="btn btn-settings" onclick="triggerAdAction('Withdraw')">Withdraw</button>
-            <button class="btn btn-settings" onclick="triggerAdAction('History')">History</button>
-            <button class="btn btn-settings" onclick="triggerAdAction('Profile')">Profile</button>
+        <div id="DepositSection" class="hidden-section">
+            <span class="close-btn" onclick="closeAll()">X</span>
+            <h3>Deposit Points</h3>
+            <p style="font-size: 12px;">নিচের নম্বরে টাকা পাঠিয়ে লাস্ট ৪ ডিজিট দিন:</p>
+            <p>bKash: 01XXXXXXXXX</p>
+            <input type="text" class="bet-input" placeholder="Last 4 Digits">
+            <button class="btn btn-bet" onclick="alert('Request Sent!')">Submit</button>
+        </div>
+
+        <div id="WithdrawSection" class="hidden-section">
+            <span class="close-btn" onclick="closeAll()">X</span>
+            <h3>Withdraw Points</h3>
+            <input type="text" class="bet-input" placeholder="Wallet Address">
+            <input type="number" class="bet-input" placeholder="Points">
+            <button class="btn btn-bet" style="background:#f84960">Withdraw Now</button>
         </div>
     </div>
 
@@ -47,39 +70,40 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // তোর অ্যাড লিঙ্কগুলো এখানে বসানো হলো
-        const adLink1 = "https://otieu.com/4/10315373"; // Adsterra
-        const adLink2 = "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57"; // Monetag
+        // টেলিগ্রাম থেকে নাম সেট করা
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            document.getElementById('userName').innerText = user.first_name;
+        }
 
-        // অ্যাড কন্ট্রোল সিস্টেম
-        function triggerAdAction(actionName) {
-            // ১ নম্বর অ্যাড ওপেন হবে
+        const adLink1 = "https://otieu.com/4/10315373"; 
+        const adLink2 = "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57";
+
+        function triggerAction(sectionId) {
+            // ১ নম্বর অ্যাড ওপেন
             window.open(adLink1, '_blank');
-
-            // ২য় অ্যাড ওপেন করার জন্য ছোট ডিলে বা ইউজার কনফার্মেশন (যাতে ব্রাউজার ব্লক না করে)
-            setTimeout(() => {
-                window.open(adLink2, '_blank');
-                
-                // অ্যাড শেষ হওয়ার পর যে অপশনটি ইউজার ক্লিক করেছিল তা ওপেন হবে
-                setTimeout(() => {
-                    alert(actionName + " Section is now loading...");
-                    // এখানে তোর পরবর্তী পেজ বা পপআপ কোড আসবে
-                }, 500);
-            }, 800);
+            
+            // ছোট একটা মেসেজ যাতে ইউজার বিরক্ত না হয়
+            tg.showConfirm("Next step is ready. Open now?", (ok) => {
+                if(ok) {
+                    window.open(adLink2, '_blank');
+                    showSection(sectionId);
+                } else {
+                    showSection(sectionId);
+                }
+            });
         }
 
-        // গেমের ডামি লজিক (কপি পেস্টের জন্য রেডি)
-        function placeBet() {
-            document.getElementById('betBtn').style.display = 'none';
-            document.getElementById('collectBtn').style.display = 'block';
-            console.log("Bet Placed");
+        function showSection(id) {
+            closeAll();
+            document.getElementById(id + 'Section').style.display = 'block';
+            window.scrollTo(0, document.body.scrollHeight);
         }
 
-        function collectWin() {
-            document.getElementById('betBtn').style.display = 'block';
-            document.getElementById('collectBtn').style.display = 'none';
-            console.log("Collected");
+        function closeAll() {
+            document.getElementById('DepositSection').style.display = 'none';
+            document.getElementById('WithdrawSection').style.display = 'none';
         }
     </script>
 </body>
-   </html>
+</html>
