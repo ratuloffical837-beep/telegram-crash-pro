@@ -3,64 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Earn Pro Elite - Multi-User</title>
+    <title>Earn Pro Ultra</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
         :root { --bg: #0b0e11; --card: #1e2329; --yellow: #f0b90b; --green: #02c076; --red: #f84960; --text: #eaecef; --blue: #3262f1; --purple: #8a3ffc; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
-        .top-bar { width: 100%; background: var(--card); padding: 12px 15px; display: flex; justify-content: space-between; position: fixed; top: 0; z-index: 1000; border-bottom: 1px solid #333; box-sizing: border-box; }
-        .game-area { height: 100vh; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
-        #multiplier { font-size: 85px; font-weight: 900; z-index: 20; color: var(--yellow); }
-        #live-stats { font-size: 13px; color: #888; margin-top: 10px; font-weight: bold; }
-        #p-cont { position: absolute; left: 10%; bottom: 35%; z-index: 50; display: none; }
-        #p-img { font-size: 60px; transform: rotate(-10deg); filter: drop-shadow(0 0 10px white); }
-        .controls { background: var(--card); width: 100%; padding: 15px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; z-index: 1000; box-sizing: border-box; border-top: 1px solid #444; }
-        .input-box { width: 100%; padding: 14px; background: #2b3139; border: 2px solid #3a3f47; color: white; border-radius: 10px; margin-bottom: 10px; font-size: 18px; outline: none; }
-        .main-btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 800; font-size: 20px; cursor: pointer; }
-        .btn-bet { background: linear-gradient(45deg, #02c076, #009e60); color: white; }
-        .btn-cashout { background: linear-gradient(45deg, #f0b90b, #d4a008); color: black; display: none; }
-        .menu-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
-        .m-btn { border: none; padding: 10px 2px; border-radius: 8px; font-size: 10px; font-weight: bold; color: white; cursor: pointer; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
-        .pop-card { background: var(--card); width: 90%; padding: 20px; border-radius: 15px; border: 1px solid #444; position: relative; max-height: 70vh; overflow-y: auto; }
-        .smoke { position: absolute; width: 10px; height: 10px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: sAnim 0.7s forwards; }
-        @keyframes sAnim { to { transform: translate(-50px, 30px) scale(0); opacity: 0; } }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        
+        .top-bar { background: var(--card); padding: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #333; }
+        
+        /* Plane Animation Fixed */
+        .game-area { height: 50vh; width: 100%; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #plane { position: absolute; font-size: 50px; bottom: 20%; left: 10%; transition: all 0.1s linear; z-index: 10; filter: drop-shadow(0 0 10px #fff); display: none; }
+        #multiplier { font-size: 80px; font-weight: 900; z-index: 5; color: var(--yellow); }
+
+        .controls { background: var(--card); padding: 20px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .input-box { width: 100%; padding: 12px; background: #2b3139; border: 1px solid #3a3f47; color: white; border-radius: 8px; margin-bottom: 10px; }
+        
+        .main-btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; }
+        .btn-bet { background: var(--green); color: white; }
+        .btn-cash { background: var(--yellow); color: black; display: none; }
+        
+        .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .m-btn { padding: 10px; border: none; border-radius: 8px; font-size: 12px; color: white; font-weight: bold; }
+
+        /* Overlay & Modals */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .modal { background: var(--card); width: 100%; padding: 20px; border-radius: 15px; border: 1px solid #444; max-height: 80vh; overflow-y: auto; }
+        
+        #adTimer { font-size: 20px; font-weight: bold; color: var(--yellow); margin-bottom: 10px; }
+        #skipBtn { display: none; background: var(--green); padding: 10px 20px; border-radius: 5px; color: white; margin-top: 10px; }
     </style>
 </head>
 <body>
+
     <div class="top-bar">
         <div>👤 <span id="uName">...</span></div>
-        <div style="color:var(--yellow); font-weight: bold;">💰 <span id="uBalance">0</span></div>
+        <div style="color:var(--yellow); font-weight: bold;">💰 <span id="uBalance">0.00</span></div>
     </div>
 
     <div class="game-area">
         <div id="multiplier">1.00x</div>
-        <div id="status" style="color:#888; font-weight:bold;">PREPARING...</div>
-        <div id="live-stats">👥 <span id="activePlayerCount">0</span> Players Betting</div>
-        <div id="p-cont"><div id="p-img">✈️</div></div>
+        <div id="plane">✈️</div>
     </div>
 
     <div class="controls">
         <input type="number" id="betAmt" class="input-box" placeholder="Min Bet 10 Pts">
         <button class="main-btn btn-bet" id="betBtn" onclick="placeBet()">PLACE BET</button>
-        <button class="main-btn btn-cashout" id="cashBtn" onclick="doCashout()">CASH OUT</button>
+        <button class="main-btn btn-cash" id="cashBtn" onclick="doCashout()">CASH OUT</button>
+        
         <div class="menu-grid">
-            <button class="m-btn" style="background:var(--blue)" onclick="openModal('Deposit')">Deposit</button>
-            <button class="m-btn" style="background:var(--red)" onclick="openModal('Withdraw')">Withdraw</button>
-            <button class="m-btn" style="background:var(--purple)" onclick="showHistory()">History</button>
-            <button class="m-btn" style="background:orange;" onclick="showRefer()">Refer</button>
+            <button class="m-btn" style="background:var(--blue)" onclick="showAd('Dep')">Deposit</button>
+            <button class="m-btn" style="background:var(--red)" onclick="showAd('Wit')">Withdraw</button>
+            <button class="m-btn" style="background:var(--purple)" onclick="showAd('His')">History</button>
+            <button class="m-btn" style="background:orange" onclick="showAd('Ref')">Refer</button>
+            <button class="m-btn" style="background:var(--green); grid-column: span 2;" onclick="showTask()">🎁 DAILY TASK (10 TK)</button>
         </div>
     </div>
 
-    <div id="popLayer" class="overlay">
-        <div class="pop-card"><div id="popContent"></div><button class="main-btn" style="background:var(--red); margin-top:15px; font-size:14px; padding:8px;" onclick="hidePop()">CLOSE</button></div>
+    <div id="adOverlay" class="overlay">
+        <div id="adTimer">15s</div>
+        <iframe id="adFrame" style="width:100%; height:300px; border:none; background:white; border-radius:10px;"></iframe>
+        <button id="skipBtn" onclick="onAdFinish()">CONTINUE TO PAGE</button>
+    </div>
+
+    <div id="contentOverlay" class="overlay">
+        <div class="modal">
+            <div id="modalContent"></div>
+            <button class="main-btn" style="background:var(--red); margin-top:15px; font-size: 14px; padding: 10px;" onclick="hideModal()">CLOSE</button>
+        </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp; tg.expand();
-        const userId = tg.initDataUnsafe?.user?.id || "dev_user";
+        const tg = window.Telegram.WebApp;
+        const userId = tg.initDataUnsafe?.user?.id || "test_user";
         const userName = tg.initDataUnsafe?.user?.first_name || "Player";
         document.getElementById('uName').innerText = userName;
 
@@ -76,154 +93,168 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let balance = 0, isBetOpen = true, isFlying = false, currentX = 1.00, activeBet = 0, hasCashed = false;
+        let balance = 0, isFlying = false, currentX = 1.0, activeBet = 0, nextTarget = "";
+        let taskCount = 0, lastTaskDate = "";
 
-        // ব্যালেন্স ও রেফার চেক
+        // ডাটাবেস থেকে ইউজারের সব তথ্য লোড (যাতে পয়েন্ট না হারায়)
         db.ref('users/' + userId).on('value', snap => {
             const data = snap.val();
-            if (data) { 
-                balance = data.balance; 
-                document.getElementById('uBalance').innerText = balance.toFixed(2); 
+            if(data) {
+                balance = data.balance || 0;
+                taskCount = data.taskCount || 0;
+                lastTaskDate = data.lastTaskDate || "";
+                document.getElementById('uBalance').innerText = balance.toFixed(2);
             } else {
-                db.ref('users/' + userId).set({ balance: 5, name: userName });
-                handleReferral();
+                db.ref('users/' + userId).set({ balance: 5, name: userName, taskCount: 0, lastTaskDate: "" });
             }
         });
 
-        function handleReferral() {
-            const params = new URLSearchParams(window.location.search);
-            const refId = params.get('start');
-            if(refId && refId != userId) {
-                db.ref('users/' + refId).once('value', s => {
-                    if(s.exists()){
-                        db.ref('users/' + refId).update({ balance: s.val().balance + 2 });
-                        db.ref('users/' + refId + '/history').push({ res: "Referral Bonus", val: 2, time: new Date().toLocaleTimeString() });
-                    }
-                });
-            }
+        // অ্যাড সিস্টেম
+        const AD_LINKS = ["https://otieu.com/4/10315373", "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57"];
+        
+        function showAd(target) {
+            nextTarget = target;
+            document.getElementById('adFrame').src = AD_LINKS[Math.floor(Math.random()*AD_LINKS.length)];
+            document.getElementById('adOverlay').style.display = 'flex';
+            let sec = 15;
+            document.getElementById('skipBtn').style.display = 'none';
+            let timer = setInterval(() => {
+                sec--;
+                document.getElementById('adTimer').innerText = sec + "s";
+                if(sec <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('skipBtn').style.display = 'block';
+                }
+            }, 1000);
         }
 
-        // লাইভ প্লেয়ার কাউন্টার
-        db.ref('live_bets').on('value', s => { document.getElementById('activePlayerCount').innerText = s.numChildren(); });
+        function onAdFinish() {
+            document.getElementById('adOverlay').style.display = 'none';
+            if(nextTarget === 'Task') processTask();
+            else openPage(nextTarget);
+        }
 
+        // গেম লজিক
         function startRound() {
-            isBetOpen = true; isFlying = false; currentX = 1.00; activeBet = 0; hasCashed = false;
-            db.ref('live_bets/' + userId).remove();
-            document.getElementById('p-cont').style.display = 'none';
+            isFlying = false; currentX = 1.0; activeBet = 0;
+            const plane = document.getElementById('plane');
+            plane.style.display = 'none';
+            plane.style.left = '10%'; plane.style.bottom = '20%';
+            document.getElementById('multiplier').innerText = "1.00x";
             document.getElementById('multiplier').style.color = 'var(--yellow)';
             document.getElementById('betBtn').style.display = 'block';
-            document.getElementById('betBtn').disabled = false;
             document.getElementById('cashBtn').style.display = 'none';
-            let wait = 10;
-            let timer = setInterval(() => {
+            
+            let wait = 8;
+            let t = setInterval(() => {
                 document.getElementById('multiplier').innerText = wait + "s";
-                document.getElementById('status').innerText = "WAITING FOR BETS";
-                wait--; if(wait < 0) { clearInterval(timer); launch(); }
+                wait--;
+                if(wait < 0) { clearInterval(t); launch(); }
             }, 1000);
         }
 
         function launch() {
-            isBetOpen = false; isFlying = true;
-            document.getElementById('p-cont').style.display = 'block';
+            isFlying = true;
+            const plane = document.getElementById('plane');
+            plane.style.display = 'block';
             document.getElementById('multiplier').style.color = 'var(--green)';
-            document.getElementById('status').innerText = "PLANE IS FLYING";
             
-            // স্মার্ট লস প্রোটেকশন: বড় বেট পড়লে ১.৩x এর বেশি যাবে না
-            let limit = (activeBet >= 100) ? 1.3 : 4.5;
-            let crashAt = (Math.random() * (limit - 1.1) + 1.1).toFixed(2);
+            let crashAt = (Math.random() * 3 + 1.1).toFixed(2);
+            let x = 10, y = 20;
 
             let loop = setInterval(() => {
                 if(!isFlying) { clearInterval(loop); return; }
                 currentX += 0.01;
                 document.getElementById('multiplier').innerText = currentX.toFixed(2) + "x";
-                if(activeBet > 0 && !hasCashed) {
-                    document.getElementById('cashBtn').innerText = `CASH OUT (${(activeBet * currentX).toFixed(2)})`;
-                }
+                
+                x += 0.5; y += 0.3;
+                plane.style.left = x + "%"; plane.style.bottom = y + "%";
 
                 if(currentX >= crashAt) {
-                    isFlying = false; document.getElementById('p-img').innerText = "💥";
+                    isFlying = false;
+                    document.getElementById('multiplier').innerText = "CRASHED!";
                     document.getElementById('multiplier').style.color = 'var(--red)';
-                    if(activeBet > 0 && !hasCashed) saveHistory("Loss", -activeBet);
                     setTimeout(startRound, 3000);
                 }
             }, 100);
         }
 
         function placeBet() {
-            const amt = parseFloat(document.getElementById('betAmt').value);
-            if(!isBetOpen || amt < 10 || amt > balance) return tg.showAlert("Min Bet 10 or Low Balance!");
+            let amt = parseFloat(document.getElementById('betAmt').value);
+            if(amt < 10 || amt > balance) return tg.showAlert("Min 10 Pts!");
             activeBet = amt; balance -= amt;
-            db.ref('users/' + userId).update({ balance: balance });
-            db.ref('live_bets/' + userId).set({ n: userName, a: amt });
-            document.getElementById('betBtn').disabled = true;
-            document.getElementById('betBtn').innerText = "BET SET";
+            updateDB();
+            document.getElementById('betBtn').style.display = 'none';
             document.getElementById('cashBtn').style.display = 'block';
         }
 
         function doCashout() {
-            if(!isFlying || hasCashed) return;
-            hasCashed = true;
-            let win = parseFloat((activeBet * currentX).toFixed(2));
-            balance += win;
-            db.ref('users/' + userId).update({ balance: balance });
-            db.ref('live_bets/' + userId).remove();
-            saveHistory("Win", win);
+            if(!isFlying) return;
+            let win = activeBet * currentX;
+            balance += win; activeBet = 0; isFlying = false;
+            updateDB();
+            tg.showAlert("Won: " + win.toFixed(2));
             document.getElementById('cashBtn').style.display = 'none';
-            tg.showAlert("Won: " + win + " Pts");
         }
 
-        function saveHistory(res, val) {
-            const h = { user: userName, res: res, val: val, x: currentX.toFixed(2), time: new Date().toLocaleTimeString() };
-            db.ref('global_history').push(h);
-            db.ref('users/' + userId + '/history').push(h);
+        function updateDB() {
+            db.ref('users/' + userId).update({ balance: balance, taskCount: taskCount, lastTaskDate: lastTaskDate });
         }
 
-        function openModal(t) {
-            document.getElementById('popLayer').style.display = 'flex';
-            let c = document.getElementById('popContent');
-            if(t === 'Deposit') {
-                c.innerHTML = `<h3>Deposit (Min 150 BDT)</h3><p>Bkash/Nagad: 017XXXXXXXX</p>
+        // পেজ লোড সিস্টেম
+        function openPage(t) {
+            document.getElementById('contentOverlay').style.display = 'flex';
+            let cont = document.getElementById('modalContent');
+            if(t==='Dep') {
+                cont.innerHTML = `<h3>Deposit (Min 150 BDT)</h3><p>Cashout/SendMoney: 01XXXXXXXXX</p>
                 <input id="da" class="input-box" type="number" placeholder="Amount">
-                <input id="dt" class="input-box" type="text" placeholder="TrxID/Last 4">
-                <button class="main-btn btn-bet" onclick="sendReq('Dep')">Submit</button>`;
-            } else {
-                c.innerHTML = `<h3>Withdraw (Min 500 Pts)</h3>
-                <input id="wa" class="input-box" type="number" placeholder="Amount">
-                <input id="wt" class="input-box" type="text" placeholder="Wallet Number">
-                <button class="main-btn m-wit" style="background:var(--red)" onclick="sendReq('Wit')">Withdraw</button>`;
+                <input id="dn" class="input-box" type="text" placeholder="Your Phone Number">
+                <input id="di" class="input-box" type="text" placeholder="Transaction ID">
+                <p>Screenshot Proof (Link):</p>
+                <input id="ds" class="input-box" type="text" placeholder="Image URL (ImgBB)">
+                <button class="main-btn btn-bet" onclick="submitDep()">Submit Proof</button>`;
+            } else if(t==='Wit') {
+                cont.innerHTML = `<h3>Withdraw (Min 500 Pts)</h3>
+                <input id="wa" class="input-box" placeholder="Amount">
+                <input id="wn" class="input-box" placeholder="Bkash/Nagad Number">
+                <button class="main-btn btn-bet" style="background:var(--red)" onclick="submitWit()">Withdraw</button>`;
             }
         }
 
-        function sendReq(t) {
-            let a = (t==='Dep')?document.getElementById('da').value : document.getElementById('wa').value;
-            let d = (t==='Dep')?document.getElementById('dt').value : document.getElementById('wt').value;
-            if((t==='Dep' && a<150) || (t==='Wit' && a<500)) return tg.showAlert("Check Min Limits!");
-            fetch(`/send-telegram?type=${t}&user=${userName}&data=Amt:${a},Info:${d}`).then(()=> { tg.showAlert("Sent!"); hidePop(); });
+        // ডেইলি টাস্ক সিস্টেম
+        function showTask() {
+            let today = new Date().toLocaleDateString();
+            if(lastTaskDate === today && taskCount >= 40) {
+                return tg.showAlert("Task Completed! Come back tomorrow.");
+            }
+            if(lastTaskDate !== today) { taskCount = 0; lastTaskDate = today; updateDB(); }
+            
+            document.getElementById('contentOverlay').style.display = 'flex';
+            document.getElementById('modalContent').innerHTML = `<h3>Task: Watch 40 Ads</h3>
+            <p>Completed: ${taskCount}/40</p>
+            <button class="main-btn btn-bet" onclick="showAd('Task')">Watch Next Ad</button>`;
         }
 
-        function showHistory() {
-            document.getElementById('popLayer').style.display = 'flex';
-            let c = document.getElementById('popContent');
-            c.innerHTML = `<h4>Global Live Wins</h4><div id="gh" style="font-size:10px; color:var(--green)"></div>
-                           <h4 style="margin-top:10px">Your History</h4><div id="uh" style="font-size:10px"></div>`;
-            db.ref('global_history').limitToLast(5).once('value', s => {
-                s.forEach(i => { document.getElementById('gh').innerHTML += `<p>🟢 ${i.val().user} won ${i.val().val} Pts at ${i.val().x}x</p>`; });
-            });
-            db.ref('users/' + userId + '/history').limitToLast(5).once('value', s => {
-                s.forEach(i => { document.getElementById('uh').innerHTML += `<p>${i.val().time}: ${i.val().res} ${i.val().val}</p>`; });
-            });
+        function processTask() {
+            taskCount++;
+            if(taskCount >= 40) {
+                balance += 10;
+                tg.showAlert("Congrats! 10 TK added to balance.");
+            } else {
+                tg.showAlert("Ad Counted: " + taskCount);
+            }
+            updateDB();
+            showTask();
         }
 
-        function showRefer() {
-            document.getElementById('popLayer').style.display = 'flex';
-            const link = `https://t.me/YOUR_BOT_USERNAME?start=${userId}`;
-            document.getElementById('popContent').innerHTML = `<h3>Refer & Earn</h3><p>Get 2 Pts per Referral</p>
-            <input class="input-box" value="${link}" id="rl" readonly>
-            <button class="main-btn btn-bet" onclick="document.getElementById('rl').select(); document.execCommand('copy'); tg.showAlert('Copied!')">Copy Link</button>`;
+        function hideModal() { document.getElementById('contentOverlay').style.display = 'none'; }
+        
+        function submitDep() {
+            let d = `User:${userName}, Amt:${document.getElementById('da').value}, Num:${document.getElementById('dn').value}, ID:${document.getElementById('di').value}, Link:${document.getElementById('ds').value}`;
+            fetch(`/send-telegram?type=Deposit&data=${d}`).then(() => tg.showAlert("Proof Sent!"));
         }
 
-        function hidePop() { document.getElementById('popLayer').style.display = 'none'; }
         startRound();
     </script>
 </body>
-    </html>
+</html>
