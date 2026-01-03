@@ -1,11 +1,15 @@
 {
   "name": "earn-pro-elite",
-  "version": "2.0.0",
+  "version": "1.0.0",
+  "description": "Crash Game",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "express": "^4.18.2",
-    "axios": "^1.6.0",
-    "firebase-admin": "^11.11.1"
+    "firebase-admin": "^11.5.0",
+    "axios": "^1.3.4",
+    "path": "^0.12.7"
   }
 }
