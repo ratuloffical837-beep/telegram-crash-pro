@@ -8,213 +8,167 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
-        :root { --bg: #0b0e11; --card: #1e2329; --yellow: #f0b90b; --green: #02c076; --red: #f84960; --blue: #3262f1; }
-        body { background: var(--bg); color: white; font-family: 'Roboto', sans-serif; margin: 0; overflow-x: hidden; }
-        .header { background: var(--card); padding: 15px; display: flex; justify-content: space-between; border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 100; }
-        .game-screen { height: 35vh; width: 100%; position: relative; background: radial-gradient(circle, #1a1d23 0%, #050709 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        #mult-val { font-size: 70px; font-weight: 900; color: var(--green); text-shadow: 0 0 15px rgba(2,192,118,0.5); }
-        .plane-img { position: absolute; font-size: 50px; bottom: 20%; left: 10%; display: none; transform: rotate(-10deg); transition: 0.5s linear; }
-        .main-controls { padding: 15px; background: var(--card); border-radius: 20px 20px 0 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
-        .input-group { background: #2b3139; padding: 10px; border-radius: 10px; display: flex; align-items: center; margin-bottom: 15px; }
-        .input-group input { background: transparent; border: none; color: white; width: 100%; padding: 5px; outline: none; font-size: 18px; }
-        .btn-action { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; font-size: 18px; cursor: pointer; text-transform: uppercase; }
-        .grid-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
-        .nav-item { background: #2b3139; padding: 10px 5px; border-radius: 10px; font-size: 10px; text-align: center; cursor: pointer; border: 1px solid #3a3f47; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; padding: 20px; box-sizing: border-box; }
-        .modal { background: var(--card); padding: 20px; border-radius: 20px; width: 100%; max-width: 400px; margin: auto; border: 1px solid #444; }
-        #adFrame { width: 100%; height: 80vh; border-radius: 15px; background: white; border: none; }
+        :root { --bg: #0b0e11; --card: #1e2329; --yellow: #f0b90b; --green: #02c076; --red: #f84960; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; overflow-x: hidden; text-align: center; }
+        .top-bar { background: var(--card); padding: 15px; display: flex; justify-content: space-between; border-bottom: 2px solid #333; }
+        .screen { height: 35vh; background: #050709; display: flex; align-items: center; justify-content: center; position: relative; }
+        #multiplier { font-size: 60px; font-weight: bold; color: var(--green); }
+        .controls { background: var(--card); padding: 20px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+        .nav-item { background: #2b3139; padding: 10px; border-radius: 10px; font-size: 10px; border: 1px solid #444; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; background: #222; color: white; border: 1px solid #444; box-sizing: border-box;}
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div>👤 <span id="userName">...</span></div>
-        <div style="color:var(--yellow); font-weight:bold;">💰 <span id="userBalance">0.00</span> TK</div>
+<div class="top-bar">
+    <div>👤 <span id="uName">...</span></div>
+    <div style="color:var(--yellow)">💰 <span id="uBal">0.00</span> TK</div>
+</div>
+
+<div class="screen">
+    <div id="multiplier">1.00x</div>
+</div>
+
+<div class="controls">
+    <input type="number" id="betAmt" placeholder="Bet Amount (Min 10)">
+    <button id="betBtn" class="btn" style="background:var(--green); color:white" onclick="placeBet()">PLACE BET</button>
+    <button id="cashBtn" class="btn" style="background:var(--yellow); display:none;" onclick="cashOut()">CASH OUT</button>
+    
+    <div class="nav-grid">
+        <div class="nav-item" onclick="showAd('Dep')">📥<br>Deposit</div>
+        <div class="nav-item" onclick="showAd('Wit')">📤<br>Withdraw</div>
+        <div class="nav-item" onclick="showAd('His')">📊<br>History</div>
+        <div class="nav-item" onclick="showAd('Ref')">🔗<br>Refer</div>
     </div>
+    <button class="btn" style="background:linear-gradient(to right, #8a3ffc, #3262f1); color:white; margin-top:15px;" onclick="showAd('Task')">🎁 DAILY TASK (40 ADS = 10 TK)</button>
+</div>
 
-    <div class="game-screen">
-        <div id="mult-val">1.00x</div>
-        <div class="plane-img" id="plane">✈️</div>
-    </div>
+<div id="adBox" class="overlay">
+    <h2 id="timer">Loading Ad...</h2>
+    <iframe id="adFrame" style="width:100%; height:70%; background:white; border-radius:10px;"></iframe>
+    <button id="closeAd" class="btn" style="display:none; background:var(--green); color:white; margin-top:20px;" onclick="afterAd()">CONTINUE</button>
+</div>
 
-    <div class="main-controls">
-        <div class="input-group">
-            <span>BET: </span>
-            <input type="number" id="betAmt" placeholder="10.00">
-        </div>
-        <button id="betBtn" class="btn-action" style="background:var(--green); color:white" onclick="handleBet()">PLACE BET</button>
-        <button id="cashBtn" class="btn-action" style="background:var(--yellow); color:black; display:none;" onclick="handleCashout()">CASH OUT</button>
-        
-        <div class="grid-nav">
-            <div class="nav-item" onclick="openAdGate('Dep')">📥<br>Deposit</div>
-            <div class="nav-item" onclick="openAdGate('Wit')">📤<br>Withdraw</div>
-            <div class="nav-item" onclick="openAdGate('His')">📊<br>History</div>
-            <div class="nav-item" onclick="openAdGate('Ref')">🔗<br>Refer</div>
-        </div>
-        <button class="btn-action" style="background:linear-gradient(to right, #8a3ffc, #3262f1); color:white; margin-top:15px; font-size:14px;" onclick="openAdGate('Task')">🎁 DAILY TASK (40 ADS = 10 TK)</button>
-    </div>
+<div id="modalBox" class="overlay">
+    <div id="modalContent" style="background:var(--card); width:100%; padding:20px; border-radius:15px; border:1px solid #444;"></div>
+    <button class="btn" style="background:var(--red); margin-top:10px;" onclick="document.getElementById('modalBox').style.display='none'">CLOSE</button>
+</div>
 
-    <div id="adOverlay" class="overlay">
-        <div id="adTimer" style="font-size:24px; color:var(--yellow); text-align:center; margin-bottom:10px;">Ad: 20s</div>
-        <iframe id="adFrame"></iframe>
-        <button id="skipBtn" style="display:none; background:var(--green); color:white; padding:15px; border:none; border-radius:10px; margin-top:15px;" onclick="closeAdGate()">CONTINUE</button>
-    </div>
+<script>
+    const tg = window.Telegram.WebApp;
+    const uid = tg.initDataUnsafe?.user?.id || "dev_user";
+    const name = tg.initDataUnsafe?.user?.first_name || "Player";
+    document.getElementById('uName').innerText = name;
 
-    <div id="actionOverlay" class="overlay">
-        <div class="modal" id="modalBody"></div>
-        <button class="btn-action" style="background:var(--red); color:white; margin-top:20px;" onclick="closeModal()">CLOSE</button>
-    </div>
+    const config = { databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(config);
+    const db = firebase.database();
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        const userId = tg.initDataUnsafe?.user?.id || "user_dev";
-        const userName = tg.initDataUnsafe?.user?.first_name || "Pilot";
-        document.getElementById('userName').innerText = userName;
+    let balance = 0, myBet = 0, isCashed = false, adCount = 0, currentType = "";
 
-        const config = { databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/" };
-        firebase.initializeApp(config);
-        const db = firebase.database();
+    // Sync Balance
+    db.ref('users/' + uid).on('value', s => {
+        const d = s.val();
+        if(d) { balance = d.bal; adCount = d.tasks || 0; document.getElementById('uBal').innerText = balance.toFixed(2); }
+        else { db.ref('users/' + uid).set({ bal: 20, tasks: 0 }); }
+    });
 
-        let balance = 0, currentBet = 0, isCashed = false, taskCount = 0, activeAction = "";
-
-        // ডাটা সিঙ্ক
-        db.ref('users/' + userId).on('value', s => {
-            const data = s.val();
-            if(data) {
-                balance = data.balance; taskCount = data.taskCount || 0;
-                document.getElementById('userBalance').innerText = balance.toFixed(2);
-            } else { db.ref('users/' + userId).set({ balance: 20, taskCount: 0, history: [] }); }
-        });
-
-        // গেম সিঙ্ক
-        db.ref('game_state').on('value', s => {
-            const state = s.val();
-            const mText = document.getElementById('mult-val');
-            const plane = document.getElementById('plane');
-
-            if(state.status === 'waiting') {
-                mText.innerText = state.timer + "s";
-                mText.style.color = 'var(--yellow)';
-                plane.style.display = 'none';
-                isCashed = false;
-                document.getElementById('betBtn').disabled = false;
-            } else if(state.status === 'flying') {
-                mText.innerText = state.multiplier.toFixed(2) + "x";
-                mText.style.color = 'var(--green)';
-                plane.style.display = 'block';
-                plane.style.left = Math.min(10 + (state.multiplier * 15), 85) + "%";
-                plane.style.bottom = Math.min(20 + (state.multiplier * 8), 65) + "%";
-                if(currentBet > 0 && !isCashed) {
-                    document.getElementById('betBtn').style.display = 'none';
-                    document.getElementById('cashBtn').style.display = 'block';
-                    document.getElementById('cashBtn').innerText = `CASH OUT (${(currentBet * state.multiplier).toFixed(2)})`;
-                }
-            } else {
-                mText.innerText = "💥 CRASHED"; mText.style.color = 'var(--red)';
-                plane.style.display = 'none'; document.getElementById('cashBtn').style.display = 'none';
-                document.getElementById('betBtn').style.display = 'block'; currentBet = 0;
+    // Game Sync
+    db.ref('game_state').on('value', s => {
+        const state = s.val();
+        const m = document.getElementById('multiplier');
+        if(state.status === 'waiting') {
+            m.innerText = state.timer + "s"; m.style.color = 'var(--yellow)';
+            isCashed = false; document.getElementById('betBtn').disabled = false;
+        } else if(state.status === 'flying') {
+            m.innerText = state.multiplier.toFixed(2) + "x"; m.style.color = 'var(--green)';
+            if(myBet > 0 && !isCashed) {
+                document.getElementById('betBtn').style.display = 'none';
+                document.getElementById('cashBtn').style.display = 'block';
+                document.getElementById('cashBtn').innerText = `CASH OUT (${(myBet * state.multiplier).toFixed(2)})`;
             }
+        } else {
+            m.innerText = "💥 CRASHED"; m.style.color = 'var(--red)';
+            document.getElementById('cashBtn').style.display = 'none';
+            document.getElementById('betBtn').style.display = 'block'; myBet = 0;
+        }
+    });
+
+    function showAd(type) {
+        currentType = type;
+        document.getElementById('adFrame').src = "https://otieu.com/4/10315373";
+        document.getElementById('adBox').style.display = 'flex';
+        let sec = 20;
+        let t = setInterval(() => {
+            sec--; document.getElementById('timer').innerText = `Ad: ${sec}s`;
+            if(sec <= 0) { clearInterval(t); document.getElementById('closeAd').style.display = 'block'; }
+        }, 1000);
+    }
+
+    function afterAd() {
+        document.getElementById('adBox').style.display = 'none';
+        document.getElementById('closeAd').style.display = 'none';
+        if(currentType === 'Task') {
+            adCount++;
+            if(adCount >= 40) { balance += 10; adCount = 0; alert("10 TK Added!"); }
+            db.ref('users/' + uid).update({ bal: balance, tasks: adCount });
+            alert(`Tasks: ${adCount}/40`);
+        } else { openForm(currentType); }
+    }
+
+    function openForm(type) {
+        const modal = document.getElementById('modalContent');
+        document.getElementById('modalBox').style.display = 'flex';
+        if(type === 'Dep') {
+            modal.innerHTML = `<h3>Deposit</h3><p>Send to: 017XXXXXXXX</p>
+            <select id="m"><option>Bkash</option><option>Nagad</option></select>
+            <input id="n" placeholder="Number"><input id="a" type="number" placeholder="Amount">
+            <input type="file" id="f" accept="image/*">
+            <button class="btn" style="background:var(--green)" onclick="subDep()">Submit Proof</button>`;
+        } else if(type === 'Wit') {
+            modal.innerHTML = `<h3>Withdraw</h3><input id="wn" placeholder="Number"><input id="wa" type="number" placeholder="Min 500">
+            <button class="btn" style="background:var(--red)" onclick="subWit()">Withdraw</button>`;
+        } else if(type === 'Ref') {
+            modal.innerHTML = `<h3>Referral</h3><p>Your Link: t.me/bot?start=${uid}</p>`;
+        } else if(type === 'His') {
+            modal.innerHTML = `<h3>History</h3><p>Coming Soon...</p>`;
+        }
+    }
+
+    function subDep() {
+        const msg = `📥 DEPOSIT\nUser: ${name}\nAmt: ${document.getElementById('a').value}`;
+        fetch(`/api/notify?type=Deposit&msg=${encodeURIComponent(msg)}`);
+        alert("Sent!"); document.getElementById('modalBox').style.display='none';
+    }
+
+    function subWit() {
+        const amt = document.getElementById('wa').value;
+        if(amt < 500 || amt > balance) return alert("Invalid Amt");
+        balance -= amt; db.ref('users/' + uid).update({ bal: balance });
+        fetch(`/api/notify?type=Withdraw&msg=Withdraw ${amt} TK by ${name}`);
+        alert("Request Sent!"); document.getElementById('modalBox').style.display='none';
+    }
+
+    function placeBet() {
+        const a = parseFloat(document.getElementById('betAmt').value);
+        if(a < 10 || a > balance) return alert("Check Balance!");
+        myBet = a; balance -= a;
+        db.ref('users/' + uid).update({ bal: balance });
+        document.getElementById('betBtn').disabled = true;
+    }
+
+    function cashOut() {
+        if(isCashed) return; isCashed = true;
+        db.ref('game_state/multiplier').once('value', s => {
+            balance += (myBet * s.val());
+            db.ref('users/' + uid).update({ bal: balance });
+            document.getElementById('cashBtn').style.display = 'none';
+            document.getElementById('betBtn').style.display = 'block';
         });
-
-        // অ্যাড গেট লজিক
-        function openAdGate(action) {
-            activeAction = action;
-            const ads = ["https://www.effectivegatecpm.com/e0xpfuhe", "https://otieu.com/4/10315373"];
-            document.getElementById('adFrame').src = ads[Math.floor(Math.random()*ads.length)];
-            document.getElementById('adOverlay').style.display = 'flex';
-            let s = 20;
-            let timer = setInterval(() => {
-                s--; document.getElementById('adTimer').innerText = `Ad: ${s}s`;
-                if(s<=0) { clearInterval(timer); document.getElementById('skipBtn').style.display = 'block'; }
-            }, 1000);
-        }
-
-        function closeAdGate() {
-            document.getElementById('adOverlay').style.display = 'none';
-            document.getElementById('skipBtn').style.display = 'none';
-            processAction();
-        }
-
-        function processAction() {
-            const modal = document.getElementById('modalBody');
-            document.getElementById('actionOverlay').style.display = 'flex';
-            if(activeAction === 'Dep') {
-                modal.innerHTML = `<h3>Deposit Money</h3><p>Send money to: <b>01700XXXXXX</b> (Cashout)</p>
-                <select id="dMethod" class="btn-action" style="margin-bottom:10px; background:#444; color:white;"><option>Bkash</option><option>Nagad</option></select>
-                <input id="dNum" class="btn-action" placeholder="Sender Number" style="margin-bottom:10px; background:#444; color:white;">
-                <input id="dAmt" class="btn-action" placeholder="Amount" type="number" style="margin-bottom:10px; background:#444; color:white;">
-                <input id="dProof" type="file" class="btn-action" accept="image/*" style="margin-bottom:10px;">
-                <button class="btn-action" style="background:var(--green); color:white" onclick="submitDeposit()">Submit Proof</button>`;
-            } else if(activeAction === 'Wit') {
-                modal.innerHTML = `<h3>Withdraw</h3><p>Minimum: 500 TK</p>
-                <select id="wMethod" class="btn-action" style="margin-bottom:10px; background:#444; color:white;"><option>Bkash</option><option>Nagad</option></select>
-                <input id="wNum" class="btn-action" placeholder="Number" style="margin-bottom:10px; background:#444; color:white;">
-                <input id="wAmt" class="btn-action" placeholder="Amount" type="number" style="margin-bottom:10px; background:#444; color:white;">
-                <button class="btn-action" style="background:var(--red); color:white" onclick="submitWithdraw()">Withdraw Now</button>`;
-            } else if(activeAction === 'Ref') {
-                const refLink = `https://t.me/your_bot?start=${userId}`;
-                modal.innerHTML = `<h3>Referral Program</h3><p>Your Link:</p><input value="${refLink}" class="btn-action" readonly style="font-size:12px; margin-bottom:10px;">
-                <button class="btn-action" style="background:var(--blue); color:white" onclick="copyRef('${refLink}')">Copy Link</button>`;
-            } else if(activeAction === 'His') {
-                db.ref('users').orderByChild('balance').limitToLast(5).once('value', s => {
-                    let top = "<h3>Leaderboard</h3>";
-                    s.forEach(u => { top += `<p>🏆 ${u.val().name || 'User'}: ${u.val().balance.toFixed(2)} TK</p>`; });
-                    modal.innerHTML = top;
-                });
-            } else if(activeAction === 'Task') {
-                taskCount++;
-                if(taskCount >= 40) { balance += 10; taskCount = 0; tg.showAlert("10 TK Bonus Added!"); }
-                db.ref('users/' + userId).update({ balance: balance, taskCount: taskCount });
-                modal.innerHTML = `<h3>Daily Task</h3><p>Completed: ${taskCount}/40</p><button class="btn-action" onclick="closeModal();openAdGate('Task')">Watch Next</button>`;
-            }
-        }
-
-        function submitDeposit() {
-            const m = document.getElementById('dMethod').value;
-            const n = document.getElementById('dNum').value;
-            const a = document.getElementById('dAmt').value;
-            const details = `User: ${userName}\nID: ${userId}\nMethod: ${m}\nFrom: ${n}\nAmount: ${a}`;
-            db.ref('requests/deposits').push({ userId, details, status: 'pending' });
-            fetch(`/notify?type=Deposit&details=${encodeURIComponent(details)}`);
-            tg.showAlert("Submitted! Point will be added after verification.");
-            closeModal();
-        }
-
-        function submitWithdraw() {
-            const a = document.getElementById('wAmt').value;
-            if(a < 500 || a > balance) return tg.showAlert("Insufficient Balance or Min Limit!");
-            const details = `User: ${userName}\nID: ${userId}\nMethod: ${document.getElementById('wMethod').value}\nTo: ${document.getElementById('wNum').value}\nAmount: ${a}`;
-            balance -= parseFloat(a);
-            db.ref('users/' + userId).update({ balance: balance });
-            db.ref('requests/withdraws').push({ userId, details, status: 'pending' });
-            fetch(`/notify?type=Withdraw&details=${encodeURIComponent(details)}`);
-            tg.showAlert("Request Sent!");
-            closeModal();
-        }
-
-        function handleBet() {
-            const a = parseFloat(document.getElementById('betAmt').value);
-            if(a < 10 || a > balance) return tg.showAlert("Invalid Bet!");
-            currentBet = a; balance -= a;
-            db.ref('users/' + userId).update({ balance: balance });
-            document.getElementById('betBtn').disabled = true;
-        }
-
-        function handleCashout() {
-            if(isCashed) return; isCashed = true;
-            db.ref('game_state/multiplier').once('value', s => {
-                const win = currentBet * s.val();
-                balance += win;
-                db.ref('users/' + userId).update({ balance: balance });
-                db.ref('users/' + userId + '/history').push({ win, multiplier: s.val() });
-                tg.showAlert(`Won: ${win.toFixed(2)} TK!`);
-                document.getElementById('cashBtn').style.display = 'none';
-                document.getElementById('betBtn').style.display = 'block';
-            });
-        }
-
-        function closeModal() { document.getElementById('actionOverlay').style.display = 'none'; }
-        function copyRef(l) { navigator.clipboard.writeText(l); tg.showAlert("Copied!"); }
-    </script>
+    }
+</script>
 </body>
     </html>
