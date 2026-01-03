@@ -3,107 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Crash Pro</title>
+    <title>Earn Pro Elite</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
-        body { background: #0b0e11; color: white; font-family: Arial; text-align: center; margin: 0; }
-        .screen { height: 300px; display: flex; align-items: center; justify-content: center; font-size: 50px; font-weight: bold; color: #02c076; }
-        .controls { padding: 20px; background: #1e2329; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        input { width: 90%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; }
+        :root { --green: #02c076; --yellow: #f0b90b; --red: #f84960; --card: #1e2329; }
+        body { background: #0b0e11; color: white; font-family: sans-serif; margin: 0; text-align: center; }
+        .header { background: var(--card); padding: 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #333; }
+        .game-area { height: 250px; display: flex; align-items: center; justify-content: center; font-size: 50px; font-weight: bold; color: var(--green); }
+        .controls { padding: 20px; background: var(--card); border-radius: 20px 20px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; }
+        .nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        .nav-btn { background: #2b3139; padding: 10px 5px; border-radius: 8px; font-size: 10px; border: 1px solid #444; }
+        input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; }
     </style>
 </head>
 <body>
 
-<div style="padding: 10px; display: flex; justify-content: space-between; background: #1e2329;">
-    <span>Balance: <b id="bal">0.00</b> TK</span>
-    <span>ID: <b id="uidText">...</b></span>
+<div class="header">
+    <div>💰 Bal: <span id="bal">0.00</span> TK</div>
+    <div>ID: <span id="uidText">...</span></div>
 </div>
 
-<div class="screen" id="display">1.00x</div>
+<div class="game-area" id="multDisplay">1.00x</div>
 
 <div class="controls">
-    <input type="number" id="amt" placeholder="Bet Amount (Min 10)">
-    <button id="mainBtn" class="btn" style="background:#02c076; color:white;" onclick="handleAction()">PLACE BET</button>
-    <div style="display: flex; gap: 5px;">
-        <button class="btn" style="background:#2b3139; color:white;" onclick="alert('Deposit 01XXXXXXXXX')">Deposit</button>
-        <button class="btn" style="background:#2b3139; color:white;" onclick="alert('Min 500 TK')">Withdraw</button>
+    <input type="number" id="betAmt" placeholder="Bet Amount (Min 10)">
+    <button id="betBtn" class="btn" style="background:var(--green);" onclick="handleBet()">PLACE BET</button>
+    <button id="cashBtn" class="btn" style="background:var(--yellow); color:black; display:none;" onclick="handleCashout()">CASH OUT</button>
+    
+    <div class="nav-grid">
+        <div class="nav-btn" onclick="alert('Send to: 017XXXXXXXX')">Deposit</div>
+        <div class="nav-btn" onclick="alert('Min Withdraw: 500 TK')">Withdraw</div>
+        <div class="nav-btn" onclick="alert('No History')">History</div>
+        <div class="nav-btn" onclick="alert('Refer Link: t.me/bot?start=123')">Refer</div>
     </div>
 </div>
 
 <script>
-    // Firebase Config
     const firebaseConfig = { databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // User ID (Using a random one for testing, or Telegram ID)
-    let uid = localStorage.getItem('user_id') || "user_" + Math.floor(Math.random() * 10000);
-    localStorage.setItem('user_id', uid);
+    let uid = "user_" + Math.floor(Math.random() * 9000); // টেলিগ্রাম আইডি এখানে আসবে
     document.getElementById('uidText').innerText = uid;
 
-    let balance = 0, currentBet = 0, isCashedOut = false, gameStatus = "";
+    let balance = 0, bet = 0, isCashed = false, currentStatus = "";
 
     // Sync Balance
     db.ref('users/' + uid).on('value', snap => {
-        const data = snap.val();
-        if(data) { balance = data.bal; document.getElementById('bal').innerText = balance.toFixed(2); }
+        if(snap.val()) { balance = snap.val().bal; document.getElementById('bal').innerText = balance.toFixed(2); }
         else { db.ref('users/' + uid).set({ bal: 50 }); }
     });
 
     // Sync Game
     db.ref('game_state').on('value', snap => {
         const state = snap.val();
-        gameStatus = state.status;
-        const disp = document.getElementById('display');
-        const btn = document.getElementById('mainBtn');
+        currentStatus = state.status;
+        const disp = document.getElementById('multDisplay');
+        const bBtn = document.getElementById('betBtn');
+        const cBtn = document.getElementById('cashBtn');
 
         if(state.status === 'waiting') {
-            disp.innerText = state.timer + "s";
-            disp.style.color = "#f0b90b";
-            btn.innerText = "PLACE BET";
-            btn.style.background = "#02c076";
-            isCashedOut = false;
+            disp.innerText = state.timer + "s"; disp.style.color = "var(--yellow)";
+            bBtn.style.display = "block"; cBtn.style.display = "none"; isCashed = false;
         } else if(state.status === 'flying') {
-            disp.innerText = state.multiplier.toFixed(2) + "x";
-            disp.style.color = "#02c076";
-            if(currentBet > 0 && !isCashedOut) {
-                btn.innerText = "CASH OUT (" + (currentBet * state.multiplier).toFixed(2) + ")";
-                btn.style.background = "#f0b90b";
-            }
+            disp.innerText = state.multiplier.toFixed(2) + "x"; disp.style.color = "var(--green)";
+            if(bet > 0 && !isCashed) { bBtn.style.display = "none"; cBtn.style.display = "block"; cBtn.innerText = "CASH OUT ("+(bet*state.multiplier).toFixed(2)+")"; }
         } else {
-            disp.innerText = "CRASHED";
-            disp.style.color = "#f84960";
-            currentBet = 0;
+            disp.innerText = "CRASHED"; disp.style.color = "var(--red)";
+            bBtn.style.display = "block"; cBtn.style.display = "none"; bet = 0;
         }
     });
 
-    function handleAction() {
-        const btn = document.getElementById('mainBtn');
-        const amtInput = document.getElementById('amt');
-        
-        if(gameStatus === 'waiting' && currentBet === 0) {
-            let a = parseFloat(amtInput.value);
-            if(a >= 10 && balance >= a) {
-                currentBet = a;
-                balance -= a;
-                db.ref('users/' + uid).update({ bal: balance });
-                btn.innerText = "BET PLACED";
-                btn.style.background = "#444";
-            } else { alert("Insufficient Balance!"); }
-        } else if(gameStatus === 'flying' && currentBet > 0 && !isCashedOut) {
-            isCashedOut = true;
-            db.ref('game_state/multiplier').once('value', s => {
-                let win = currentBet * s.val();
-                balance += win;
-                db.ref('users/' + uid).update({ bal: balance });
-                alert("You Won: " + win.toFixed(2) + " TK");
-                currentBet = 0;
-                btn.style.display = "none";
-                setTimeout(() => btn.style.display = "block", 2000);
-            });
-        }
+    function handleBet() {
+        let a = parseFloat(document.getElementById('betAmt').value);
+        if(a >= 10 && balance >= a && currentStatus === 'waiting') {
+            bet = a; balance -= a;
+            db.ref('users/' + uid).update({ bal: balance });
+            document.getElementById('betBtn').innerText = "BET PLACED";
+        } else { alert("Insufficient Balance or Round Started!"); }
+    }
+
+    function handleCashout() {
+        if(isCashed) return;
+        isCashed = true;
+        db.ref('game_state/multiplier').once('value', s => {
+            let win = bet * s.val();
+            balance += win;
+            db.ref('users/' + uid).update({ bal: balance });
+            alert("Won: " + win.toFixed(2));
+            bet = 0;
+            document.getElementById('cashBtn').style.display = "none";
+            document.getElementById('betBtn').style.display = "block";
+        });
     }
 </script>
 </body>
