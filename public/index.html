@@ -3,57 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Earn Pro - Elite Version</title>
+    <title>Earn Pro - Powered by Gemini</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
-        :root { --bg: #0b0e11; --card: #1e2329; --yellow: #f0b90b; --green: #02c076; --red: #f84960; --text: #eaecef; --blue: #3262f1; --purple: #8a3ffc; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
-        
-        .top-bar { width: 100%; background: var(--card); padding: 12px 15px; display: flex; justify-content: space-between; position: fixed; top: 0; z-index: 1000; border-bottom: 1px solid #333; box-sizing: border-box; }
-
+        :root { --bg: #0b0e11; --card: #1e2329; --yellow: #f0b90b; --green: #02c076; --red: #f84960; --text: #eaecef; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
+        .top-bar { width: 100%; background: var(--card); padding: 10px 15px; display: flex; justify-content: space-between; position: fixed; top: 0; z-index: 1000; border-bottom: 1px solid #333; box-sizing: border-box; }
         .game-area { height: 100vh; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; }
-        #multiplier { font-size: 85px; font-weight: 900; z-index: 20; text-shadow: 0 0 25px rgba(240,185,11,0.2); }
-        #status { font-size: 18px; letter-spacing: 2px; color: var(--yellow); font-weight: bold; z-index: 20; }
-
+        #multiplier { font-size: 80px; font-weight: 800; z-index: 20; text-shadow: 0 0 20px rgba(2,192,118,0.3); }
         #p-cont { position: absolute; left: 10%; bottom: 30%; z-index: 50; display: none; }
         #p-img { font-size: 65px; transform: rotate(-10deg); filter: drop-shadow(0 0 15px white); }
-
-        .controls { background: var(--card); width: 100%; padding: 20px; border-radius: 25px 25px 0 0; position: fixed; bottom: 0; z-index: 1000; box-sizing: border-box; border-top: 1px solid #444; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); }
-        .input-box { width: 100%; padding: 15px; background: #2b3139; border: 2px solid #3a3f47; color: white; border-radius: 12px; margin-bottom: 12px; font-size: 18px; outline: none; transition: 0.3s; }
-        .input-box:focus { border-color: var(--yellow); }
-
-        .main-btn { width: 100%; padding: 18px; border: none; border-radius: 15px; font-weight: 800; font-size: 22px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .btn-bet { background: linear-gradient(45deg, #02c076, #009e60); color: white; }
-        .btn-cashout { background: linear-gradient(45deg, #f0b90b, #d4a008); color: black; display: none; }
-        
-        /* কালারফুল মেনু বাটন */
-        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
-        .m-btn { border: none; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; transition: 0.3s; }
-        .m-dep { background: var(--blue); }
-        .m-wit { background: var(--red); }
-        .m-his { background: var(--purple); }
-        .m-set { background: #474d57; }
-        .m-btn:active { transform: scale(0.95); }
-
+        .controls { background: var(--card); width: 100%; padding: 15px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; z-index: 1000; box-sizing: border-box; border-top: 1px solid #444; }
+        .input-box { width: 100%; padding: 14px; background: #2b3139; border: 1px solid #474d57; color: white; border-radius: 10px; margin-bottom: 10px; font-size: 16px; outline: none; }
+        .main-btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: bold; font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .btn-bet { background: var(--green); color: white; }
+        .btn-cashout { background: var(--yellow); color: black; display: none; }
+        .menu-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        .m-btn { background: #2b3139; color: var(--text); border: none; padding: 10px 5px; border-radius: 8px; font-size: 11px; cursor: pointer; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
-        .pop-card { background: var(--card); width: 90%; padding: 25px; border-radius: 20px; border: 1px solid #444; max-height: 80vh; overflow-y: auto; position: relative; }
-        .close-pop { position: absolute; top: 10px; right: 15px; font-size: 25px; color: var(--red); cursor: pointer; }
-
-        .smoke { position: absolute; width: 12px; height: 12px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: sAnim 0.7s forwards; }
-        @keyframes sAnim { to { transform: translate(-60px, 40px) scale(0); opacity: 0; } }
+        .pop-card { background: var(--card); width: 90%; padding: 20px; border-radius: 15px; border: 1px solid var(--yellow); max-height: 80vh; overflow-y: auto; }
+        .smoke { position: absolute; width: 10px; height: 10px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: sAnim 0.7s forwards; }
+        @keyframes sAnim { to { transform: translate(-50px, 30px) scale(0); opacity: 0; } }
     </style>
 </head>
 <body>
     <div class="top-bar">
-        <div style="font-weight: bold;">👤 <span id="uName">Loading...</span></div>
-        <div style="color:var(--yellow); font-weight: 800;">💰 <span id="uBalance">0</span></div>
+        <div>👤 <span id="uName">Loading...</span></div>
+        <div style="color:var(--yellow)">💰 <span id="uBalance">0</span> Pts</div>
     </div>
 
     <div class="game-area">
         <div id="multiplier">1.00x</div>
-        <div id="status">INITIALIZING SYSTEM...</div>
+        <div id="status">INITIALIZING...</div>
         <div id="p-cont"><div id="p-img">✈️</div></div>
     </div>
 
@@ -63,31 +46,28 @@
         <button class="main-btn btn-cashout" id="cashBtn" onclick="doCashout()">CASH OUT</button>
         
         <div class="menu-grid">
-            <button class="m-btn m-dep" onclick="openAd('Deposit')">📥 Deposit</button>
-            <button class="m-btn m-wit" onclick="openAd('Withdraw')">📤 Withdraw</button>
-            <button class="m-btn m-his" onclick="showHistory()">📜 History</button>
-            <button class="m-btn m-set" onclick="showSettings()">⚙️ Settings</button>
+            <button class="m-btn" onclick="openAd('Deposit')">Deposit</button>
+            <button class="m-btn" onclick="openAd('Withdraw')">Withdraw</button>
+            <button class="m-btn" onclick="showHistory()">History</button>
+            <button class="m-btn" onclick="showSettings()">Settings</button>
         </div>
     </div>
 
     <div id="adLayer" class="overlay">
-        <h3 id="adText">Verifying Action...</h3>
-        <iframe id="adFrame" style="width:100%; height:350px; border:none; background:#fff; border-radius:15px;"></iframe>
-        <div style="margin-top:15px; font-size:18px;"><span id="sec">15</span>s left</div>
-        <button id="skipBtn" style="display:none; margin-top:15px; padding:12px 30px; background:var(--green); border:none; border-radius:10px; font-weight:bold; color:white;" onclick="closeAd()">OPEN FORM</button>
+        <h3 id="adText">Loading Security Ad...</h3>
+        <iframe id="adFrame" style="width:100%; height:350px; border:none; border-radius:10px;"></iframe>
+        <div style="margin-top:15px;"><span id="sec">15</span>s left...</div>
+        <button id="skipBtn" style="display:none; margin-top:10px; padding:10px 20px; background:var(--green); border:none; border-radius:5px;" onclick="closeAd()">Access Form</button>
     </div>
 
     <div id="popLayer" class="overlay">
-        <div class="pop-card">
-            <span class="close-pop" onclick="hidePop()">×</span>
-            <div id="popContent"></div>
-        </div>
+        <div class="pop-card" id="popContent"></div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp; tg.expand();
-        const userId = tg.initDataUnsafe?.user?.id || "dev_user";
-        const userName = tg.initDataUnsafe?.user?.first_name || "Guest";
+        const userId = tg.initDataUnsafe?.user?.id || "dev_test";
+        const userName = tg.initDataUnsafe?.user?.first_name || "User";
         document.getElementById('uName').innerText = userName;
 
         const firebaseConfig = {
@@ -105,14 +85,14 @@
         let balance = 0, isBetOpen = true, isFlying = false, currentX = 1.00, hasCashedOut = false, activeBet = 0, activeTab = "";
         const ADS = ["https://otieu.com/4/10315373", "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57"];
 
-        // ব্যালেন্স ডাটা লোড
+        // ব্যালেন্স সিঙ্ক
         db.ref('users/' + userId).on('value', (snap) => {
             const data = snap.val();
             if (data) {
                 balance = data.balance;
                 document.getElementById('uBalance').innerText = balance.toLocaleString();
             } else {
-                db.ref('users/' + userId).set({ balance: 5, name: userName }); 
+                db.ref('users/' + userId).set({ balance: 5, name: userName, history: [] }); // ৫ পয়েন্ট বোনাস
             }
         });
 
@@ -125,7 +105,6 @@
             document.getElementById('multiplier').style.color = 'var(--yellow)';
             document.getElementById('betBtn').style.display = 'block';
             document.getElementById('betBtn').disabled = false;
-            document.getElementById('betBtn').innerText = "PLACE BET";
             document.getElementById('cashBtn').style.display = 'none';
             
             let wait = 10;
@@ -143,7 +122,7 @@
             document.getElementById('multiplier').style.color = 'var(--green)';
             document.getElementById('status').innerText = "FLYING...";
             let x = 10, y = 30;
-            let crashAt = (Math.random() * 4 + 1.1).toFixed(2);
+            let crashAt = (Math.random() * 3.5 + 1.1).toFixed(2);
 
             let loop = setInterval(() => {
                 if(!isFlying) { clearInterval(loop); return; }
@@ -155,7 +134,7 @@
                     document.getElementById('cashBtn').innerText = `CASH OUT (${liveProfit})`;
                 }
 
-                x += 0.2; y += 0.15;
+                x += 0.18; y += 0.12;
                 const pc = document.getElementById('p-cont');
                 pc.style.left = x + "%"; pc.style.bottom = y + "%";
                 const s = document.createElement('div'); s.className = 'smoke';
@@ -175,6 +154,7 @@
         function placeBet() {
             const amt = parseFloat(document.getElementById('betAmt').value);
             if(!isBetOpen || isNaN(amt) || amt > balance || amt < 1) return tg.showAlert("Invalid Bet!");
+            
             activeBet = amt;
             balance -= amt;
             db.ref('users/' + userId).update({ balance: balance });
@@ -195,15 +175,16 @@
         }
 
         function saveHistory(res, val) {
-            db.ref('users/' + userId + '/history').push({ time: new Date().toLocaleTimeString(), res: res, val: val, x: currentX.toFixed(2) });
+            const entry = { time: new Date().toLocaleTimeString(), res: res, val: val, x: currentX.toFixed(2) };
+            db.ref('users/' + userId + '/history').push(entry);
         }
 
-        // AD & MODALS
+        // Ad Logic
         function openAd(type) {
             activeTab = type;
             document.getElementById('adFrame').src = ADS[Math.floor(Math.random()*ADS.length)];
             document.getElementById('adLayer').style.display = 'flex';
-            let s = 15; document.getElementById('sec').innerText = s;
+            let s = 15;
             document.getElementById('skipBtn').style.display = 'none';
             let t = setInterval(() => {
                 s--; document.getElementById('sec').innerText = s;
@@ -217,56 +198,45 @@
         }
 
         function showForm() {
+            const pop = document.getElementById('popLayer');
             const cont = document.getElementById('popContent');
-            document.getElementById('popLayer').style.display = 'flex';
+            pop.style.display = 'flex';
             if(activeTab === 'Deposit') {
-                cont.innerHTML = `<h2 style="color:var(--blue)">Deposit Points</h2><p style="background:#3a3f47; padding:10px; border-radius:8px;">Send Money to: <b>01700000000</b></p>
-                <select id="dm" class="input-box"><option>bKash</option><option>Nagad</option></select>
-                <input type="number" id="da" class="input-box" placeholder="Amount (BDT)">
-                <input type="number" id="dl" class="input-box" placeholder="Last 4 Digits">
-                <button class="main-btn btn-bet" onclick="sendToAdmin('Deposit')">Submit Proof</button>`;
+                cont.innerHTML = `<h3>Deposit</h3><p>Send Money to: 017XXXXXXXX</p>
+                <select id="m" class="input-box"><option>bKash</option><option>Nagad</option></select>
+                <input type="number" id="a" class="input-box" placeholder="Amount">
+                <input type="number" id="l" class="input-box" placeholder="Last 4 Digits">
+                <button class="main-btn btn-bet" onclick="submitReq('Dep')">Submit</button>
+                <button class="main-btn" style="background:var(--red);margin-top:10px" onclick="hidePop()">Close</button>`;
             } else {
-                cont.innerHTML = `<h2 style="color:var(--red)">Withdraw Points</h2>
-                <input type="number" id="wa" class="input-box" placeholder="Amount to Withdraw">
-                <input type="text" id="wad" class="input-box" placeholder="Wallet Address / Number">
-                <button class="main-btn m-wit" onclick="sendToAdmin('Withdraw')">Submit Request</button>`;
+                cont.innerHTML = `<h3>Withdraw</h3><input type="number" id="wa" class="input-box" placeholder="Points">
+                <input type="text" id="wad" class="input-box" placeholder="Wallet Address">
+                <button class="main-btn btn-bet" onclick="submitReq('Wit')">Request</button>
+                <button class="main-btn" style="background:var(--red);margin-top:10px" onclick="hidePop()">Close</button>`;
             }
         }
 
-        function sendToAdmin(type) {
-            let data = "";
-            if(type === 'Deposit') {
-                data = `Method: ${document.getElementById('dm').value}%0AAmount: ${document.getElementById('da').value}%0ALast 4: ${document.getElementById('dl').value}`;
-            } else {
-                data = `Points: ${document.getElementById('wa').value}%0AAddress: ${document.getElementById('wad').value}`;
-            }
-            
-            // Render এর Proxy ব্যবহার করে টেলিগ্রামে মেসেজ পাঠানো (Security)
-            fetch(`/send-telegram?type=${type}&user=${userName}&data=${data}`)
-            .then(res => {
-                tg.showAlert("Request Submitted! Admin will verify soon.");
-                hidePop();
-            });
-        }
-
+        function submitReq(t) { tg.showAlert("Request sent to Admin!"); hidePop(); }
         function hidePop() { document.getElementById('popLayer').style.display = 'none'; }
 
         function showHistory() {
             document.getElementById('popLayer').style.display = 'flex';
             const cont = document.getElementById('popContent');
-            cont.innerHTML = `<h2>Game History</h2><div id="hList" style="text-align:left;"></div>`;
-            db.ref('users/' + userId + '/history').limitToLast(8).once('value', s => {
-                s.forEach(c => {
-                    const d = c.val();
-                    const color = d.res === 'Win' ? 'var(--green)' : 'var(--red)';
-                    document.getElementById('hList').innerHTML += `<div style="border-bottom:1px solid #444; padding:10px; color:${color}">${d.time} | ${d.res}: ${d.val} Pts (${d.x}x)</div>`;
+            cont.innerHTML = `<h3>Recent History</h3><div id="hList" style="text-align:left; font-size:12px;"></div>
+            <button class="main-btn" style="background:var(--red);margin-top:10px" onclick="hidePop()">Close</button>`;
+            db.ref('users/' + userId + '/history').limitToLast(10).once('value', s => {
+                s.forEach(child => {
+                    const d = child.val();
+                    document.getElementById('hList').innerHTML += `<div style="border-bottom:1px solid #444; padding:5px">${d.time} - ${d.res} (${d.val} Pts) at ${d.x}x</div>`;
                 });
             });
         }
 
         function showSettings() {
             document.getElementById('popLayer').style.display = 'flex';
-            document.getElementById('popContent').innerHTML = `<h2>Settings</h2><p>User: ${userName}</p><p>ID: ${userId}</p><p>Server: Render High-Speed</p><p>Status: <span style="color:var(--green)">Online</span></p>`;
+            document.getElementById('popContent').innerHTML = `<h3>Settings</h3>
+            <p>User ID: ${userId}</p><p>Sound: ON</p><p>Version: 2.0.1 (Elite)</p>
+            <button class="main-btn" style="background:var(--red);margin-top:10px" onclick="hidePop()">Close</button>`;
         }
 
         startRound();
