@@ -1,174 +1,110 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Earn Pro Elite</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crash Pro</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
-        :root { --bg: #0b0e11; --card: #1e2329; --yellow: #f0b90b; --green: #02c076; --red: #f84960; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; overflow-x: hidden; text-align: center; }
-        .top-bar { background: var(--card); padding: 15px; display: flex; justify-content: space-between; border-bottom: 2px solid #333; }
-        .screen { height: 35vh; background: #050709; display: flex; align-items: center; justify-content: center; position: relative; }
-        #multiplier { font-size: 60px; font-weight: bold; color: var(--green); }
-        .controls { background: var(--card); padding: 20px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
-        .nav-item { background: #2b3139; padding: 10px; border-radius: 10px; font-size: 10px; border: 1px solid #444; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; background: #222; color: white; border: 1px solid #444; box-sizing: border-box;}
+        body { background: #0b0e11; color: white; font-family: Arial; text-align: center; margin: 0; }
+        .screen { height: 300px; display: flex; align-items: center; justify-content: center; font-size: 50px; font-weight: bold; color: #02c076; }
+        .controls { padding: 20px; background: #1e2329; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        input { width: 90%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <div>👤 <span id="uName">...</span></div>
-    <div style="color:var(--yellow)">💰 <span id="uBal">0.00</span> TK</div>
+<div style="padding: 10px; display: flex; justify-content: space-between; background: #1e2329;">
+    <span>Balance: <b id="bal">0.00</b> TK</span>
+    <span>ID: <b id="uidText">...</b></span>
 </div>
 
-<div class="screen">
-    <div id="multiplier">1.00x</div>
-</div>
+<div class="screen" id="display">1.00x</div>
 
 <div class="controls">
-    <input type="number" id="betAmt" placeholder="Bet Amount (Min 10)">
-    <button id="betBtn" class="btn" style="background:var(--green); color:white" onclick="placeBet()">PLACE BET</button>
-    <button id="cashBtn" class="btn" style="background:var(--yellow); display:none;" onclick="cashOut()">CASH OUT</button>
-    
-    <div class="nav-grid">
-        <div class="nav-item" onclick="showAd('Dep')">📥<br>Deposit</div>
-        <div class="nav-item" onclick="showAd('Wit')">📤<br>Withdraw</div>
-        <div class="nav-item" onclick="showAd('His')">📊<br>History</div>
-        <div class="nav-item" onclick="showAd('Ref')">🔗<br>Refer</div>
+    <input type="number" id="amt" placeholder="Bet Amount (Min 10)">
+    <button id="mainBtn" class="btn" style="background:#02c076; color:white;" onclick="handleAction()">PLACE BET</button>
+    <div style="display: flex; gap: 5px;">
+        <button class="btn" style="background:#2b3139; color:white;" onclick="alert('Deposit 01XXXXXXXXX')">Deposit</button>
+        <button class="btn" style="background:#2b3139; color:white;" onclick="alert('Min 500 TK')">Withdraw</button>
     </div>
-    <button class="btn" style="background:linear-gradient(to right, #8a3ffc, #3262f1); color:white; margin-top:15px;" onclick="showAd('Task')">🎁 DAILY TASK (40 ADS = 10 TK)</button>
-</div>
-
-<div id="adBox" class="overlay">
-    <h2 id="timer">Loading Ad...</h2>
-    <iframe id="adFrame" style="width:100%; height:70%; background:white; border-radius:10px;"></iframe>
-    <button id="closeAd" class="btn" style="display:none; background:var(--green); color:white; margin-top:20px;" onclick="afterAd()">CONTINUE</button>
-</div>
-
-<div id="modalBox" class="overlay">
-    <div id="modalContent" style="background:var(--card); width:100%; padding:20px; border-radius:15px; border:1px solid #444;"></div>
-    <button class="btn" style="background:var(--red); margin-top:10px;" onclick="document.getElementById('modalBox').style.display='none'">CLOSE</button>
 </div>
 
 <script>
-    const tg = window.Telegram.WebApp;
-    const uid = tg.initDataUnsafe?.user?.id || "dev_user";
-    const name = tg.initDataUnsafe?.user?.first_name || "Player";
-    document.getElementById('uName').innerText = name;
-
-    const config = { databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/" };
-    firebase.initializeApp(config);
+    // Firebase Config
+    const firebaseConfig = { databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let balance = 0, myBet = 0, isCashed = false, adCount = 0, currentType = "";
+    // User ID (Using a random one for testing, or Telegram ID)
+    let uid = localStorage.getItem('user_id') || "user_" + Math.floor(Math.random() * 10000);
+    localStorage.setItem('user_id', uid);
+    document.getElementById('uidText').innerText = uid;
+
+    let balance = 0, currentBet = 0, isCashedOut = false, gameStatus = "";
 
     // Sync Balance
-    db.ref('users/' + uid).on('value', s => {
-        const d = s.val();
-        if(d) { balance = d.bal; adCount = d.tasks || 0; document.getElementById('uBal').innerText = balance.toFixed(2); }
-        else { db.ref('users/' + uid).set({ bal: 20, tasks: 0 }); }
+    db.ref('users/' + uid).on('value', snap => {
+        const data = snap.val();
+        if(data) { balance = data.bal; document.getElementById('bal').innerText = balance.toFixed(2); }
+        else { db.ref('users/' + uid).set({ bal: 50 }); }
     });
 
-    // Game Sync
-    db.ref('game_state').on('value', s => {
-        const state = s.val();
-        const m = document.getElementById('multiplier');
+    // Sync Game
+    db.ref('game_state').on('value', snap => {
+        const state = snap.val();
+        gameStatus = state.status;
+        const disp = document.getElementById('display');
+        const btn = document.getElementById('mainBtn');
+
         if(state.status === 'waiting') {
-            m.innerText = state.timer + "s"; m.style.color = 'var(--yellow)';
-            isCashed = false; document.getElementById('betBtn').disabled = false;
+            disp.innerText = state.timer + "s";
+            disp.style.color = "#f0b90b";
+            btn.innerText = "PLACE BET";
+            btn.style.background = "#02c076";
+            isCashedOut = false;
         } else if(state.status === 'flying') {
-            m.innerText = state.multiplier.toFixed(2) + "x"; m.style.color = 'var(--green)';
-            if(myBet > 0 && !isCashed) {
-                document.getElementById('betBtn').style.display = 'none';
-                document.getElementById('cashBtn').style.display = 'block';
-                document.getElementById('cashBtn').innerText = `CASH OUT (${(myBet * state.multiplier).toFixed(2)})`;
+            disp.innerText = state.multiplier.toFixed(2) + "x";
+            disp.style.color = "#02c076";
+            if(currentBet > 0 && !isCashedOut) {
+                btn.innerText = "CASH OUT (" + (currentBet * state.multiplier).toFixed(2) + ")";
+                btn.style.background = "#f0b90b";
             }
         } else {
-            m.innerText = "💥 CRASHED"; m.style.color = 'var(--red)';
-            document.getElementById('cashBtn').style.display = 'none';
-            document.getElementById('betBtn').style.display = 'block'; myBet = 0;
+            disp.innerText = "CRASHED";
+            disp.style.color = "#f84960";
+            currentBet = 0;
         }
     });
 
-    function showAd(type) {
-        currentType = type;
-        document.getElementById('adFrame').src = "https://otieu.com/4/10315373";
-        document.getElementById('adBox').style.display = 'flex';
-        let sec = 20;
-        let t = setInterval(() => {
-            sec--; document.getElementById('timer').innerText = `Ad: ${sec}s`;
-            if(sec <= 0) { clearInterval(t); document.getElementById('closeAd').style.display = 'block'; }
-        }, 1000);
-    }
-
-    function afterAd() {
-        document.getElementById('adBox').style.display = 'none';
-        document.getElementById('closeAd').style.display = 'none';
-        if(currentType === 'Task') {
-            adCount++;
-            if(adCount >= 40) { balance += 10; adCount = 0; alert("10 TK Added!"); }
-            db.ref('users/' + uid).update({ bal: balance, tasks: adCount });
-            alert(`Tasks: ${adCount}/40`);
-        } else { openForm(currentType); }
-    }
-
-    function openForm(type) {
-        const modal = document.getElementById('modalContent');
-        document.getElementById('modalBox').style.display = 'flex';
-        if(type === 'Dep') {
-            modal.innerHTML = `<h3>Deposit</h3><p>Send to: 017XXXXXXXX</p>
-            <select id="m"><option>Bkash</option><option>Nagad</option></select>
-            <input id="n" placeholder="Number"><input id="a" type="number" placeholder="Amount">
-            <input type="file" id="f" accept="image/*">
-            <button class="btn" style="background:var(--green)" onclick="subDep()">Submit Proof</button>`;
-        } else if(type === 'Wit') {
-            modal.innerHTML = `<h3>Withdraw</h3><input id="wn" placeholder="Number"><input id="wa" type="number" placeholder="Min 500">
-            <button class="btn" style="background:var(--red)" onclick="subWit()">Withdraw</button>`;
-        } else if(type === 'Ref') {
-            modal.innerHTML = `<h3>Referral</h3><p>Your Link: t.me/bot?start=${uid}</p>`;
-        } else if(type === 'His') {
-            modal.innerHTML = `<h3>History</h3><p>Coming Soon...</p>`;
+    function handleAction() {
+        const btn = document.getElementById('mainBtn');
+        const amtInput = document.getElementById('amt');
+        
+        if(gameStatus === 'waiting' && currentBet === 0) {
+            let a = parseFloat(amtInput.value);
+            if(a >= 10 && balance >= a) {
+                currentBet = a;
+                balance -= a;
+                db.ref('users/' + uid).update({ bal: balance });
+                btn.innerText = "BET PLACED";
+                btn.style.background = "#444";
+            } else { alert("Insufficient Balance!"); }
+        } else if(gameStatus === 'flying' && currentBet > 0 && !isCashedOut) {
+            isCashedOut = true;
+            db.ref('game_state/multiplier').once('value', s => {
+                let win = currentBet * s.val();
+                balance += win;
+                db.ref('users/' + uid).update({ bal: balance });
+                alert("You Won: " + win.toFixed(2) + " TK");
+                currentBet = 0;
+                btn.style.display = "none";
+                setTimeout(() => btn.style.display = "block", 2000);
+            });
         }
-    }
-
-    function subDep() {
-        const msg = `📥 DEPOSIT\nUser: ${name}\nAmt: ${document.getElementById('a').value}`;
-        fetch(`/api/notify?type=Deposit&msg=${encodeURIComponent(msg)}`);
-        alert("Sent!"); document.getElementById('modalBox').style.display='none';
-    }
-
-    function subWit() {
-        const amt = document.getElementById('wa').value;
-        if(amt < 500 || amt > balance) return alert("Invalid Amt");
-        balance -= amt; db.ref('users/' + uid).update({ bal: balance });
-        fetch(`/api/notify?type=Withdraw&msg=Withdraw ${amt} TK by ${name}`);
-        alert("Request Sent!"); document.getElementById('modalBox').style.display='none';
-    }
-
-    function placeBet() {
-        const a = parseFloat(document.getElementById('betAmt').value);
-        if(a < 10 || a > balance) return alert("Check Balance!");
-        myBet = a; balance -= a;
-        db.ref('users/' + uid).update({ bal: balance });
-        document.getElementById('betBtn').disabled = true;
-    }
-
-    function cashOut() {
-        if(isCashed) return; isCashed = true;
-        db.ref('game_state/multiplier').once('value', s => {
-            balance += (myBet * s.val());
-            db.ref('users/' + uid).update({ bal: balance });
-            document.getElementById('cashBtn').style.display = 'none';
-            document.getElementById('betBtn').style.display = 'block';
-        });
     }
 </script>
 </body>
-    </html>
+</html>
