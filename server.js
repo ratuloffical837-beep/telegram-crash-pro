@@ -1,49 +1,79 @@
 const express = require('express');
 const admin = require('firebase-admin');
-const axios = require('axios');
-const path = require('path');
+const TelegramBot = require('node-telegram-bot-api');
+const cors = require('cors');
+
 const app = express();
+app.use(express.json());
+app.use(cors());
 
-// Firebase Connection (Direct URL Method)
-if (!admin.apps.length) {
-    admin.initializeApp({
-        databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/"
-    });
-}
-const db = admin.database();
+// Render Environment Variables থেকে ডাটা লোড করা
+const serviceAccount = {
+  "project_id": process.env.FIREBASE_PROJECT_ID,
+  "private_key": process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  "client_email": process.env.FIREBASE_CLIENT_EMAIL,
+};
 
-let gameState = { status: 'waiting', timer: 10, multiplier: 1.0, crashAt: 2.0 };
-
-// Game Logic Engine
-setInterval(async () => {
-    try {
-        if (gameState.status === 'waiting') {
-            gameState.timer--;
-            if (gameState.timer <= 0) {
-                gameState.status = 'flying';
-                gameState.multiplier = 1.0;
-                gameState.crashAt = parseFloat((Math.random() * 3.5 + 1.1).toFixed(2));
-            }
-        } else if (gameState.status === 'flying') {
-            gameState.multiplier += 0.05;
-            if (gameState.multiplier >= gameState.crashAt) {
-                gameState.status = 'crashed';
-                setTimeout(() => { gameState.status = 'waiting'; gameState.timer = 10; }, 3000);
-            }
-        }
-        await db.ref('game_state').set(gameState);
-    } catch (e) { console.log("DB Update Waiting..."); }
-}, 1000);
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('/api/notify', async (req, res) => {
-    const { msg } = req.query;
-    try {
-        await axios.get(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage?chat_id=${process.env.CHAT_ID}&text=${encodeURIComponent(msg)}`);
-        res.send("OK");
-    } catch (err) { res.status(500).send("Error"); }
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/"
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Server is LIVE on port ${PORT}`));
+const db = admin.database();
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {polling: true});
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+
+// গেম লজিক ভেরিয়েবল
+let multiplier = 1.00;
+let gameStatus = "waiting"; 
+let timer = 10;
+
+// গেম লুপ: প্রতি ১০০ মিলিসেকেন্ডে ফায়ারবেস আপডেট হবে
+setInterval(async () => {
+  if (gameStatus === "waiting") {
+    timer -= 0.1;
+    if (timer <= 0) {
+      gameStatus = "flying";
+      multiplier = 1.00;
+    }
+  } else if (gameStatus === "flying") {
+    multiplier += 0.05; 
+    if (Math.random() < 0.03) { // ক্রাশ লজিক
+      gameStatus = "crashed";
+      setTimeout(() => {
+        gameStatus = "waiting";
+        timer = 10;
+        multiplier = 1.00;
+      }, 4000); 
+    }
+  }
+
+  db.ref('game_state').set({
+    multiplier: parseFloat(multiplier.toFixed(2)),
+    status: gameStatus,
+    timer: Math.ceil(timer)
+  });
+}, 100);
+
+// পেমেন্ট রিকোয়েস্ট হ্যান্ডেলার
+app.post('/request', (req, res) => {
+  const { type, userId, amount, method, number } = req.body;
+  const msg = `🔔 *NEW ${type.toUpperCase()}*\n👤 User: ${userId}\n💰 Amount: ৳${amount}\n📱 Method: ${method}\n🔢 Number: ${number}`;
+  
+  bot.sendMessage(ADMIN_CHAT_ID, msg, { parse_mode: 'Markdown' });
+  res.json({ success: true });
+});
+
+// টেলিগ্রাম স্টার্ট কমান্ড
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, "Welcome to Earn Pro Crash! 🚀", {
+    reply_markup: {
+      inline_keyboard: [[
+        { text: "🕹️ Play Now", web_app: { url: process.env.FRONTEND_URL } }
+      ]]
+    }
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
