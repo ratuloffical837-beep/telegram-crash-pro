@@ -1,6 +1,7 @@
 {
   "name": "earn-pro-elite",
   "version": "2.0.0",
+  "description": "Real-time Crash Game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
