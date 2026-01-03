@@ -9,14 +9,16 @@ const CHAT_ID = process.env.CHAT_ID;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// টেলিগ্রাম মেসেজ পাঠানোর রুট
 app.get('/send-telegram', async (req, res) => {
     const { type, user, data } = req.query;
-    const msg = `🎰 *REQUEST: ${type}*%0A👤 User: ${user}%0A📄 Data: ${data}`;
+    const message = `📢 *NEW ${type.toUpperCase()} REQUEST*%0A👤 User: ${user}%0A📝 Details:%0A${data}`;
+    
     try {
-        await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${msg}&parse_mode=Markdown`);
-        res.status(200).send("Done");
-    } catch (e) {
-        res.status(500).send("Err");
+        await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${message}&parse_mode=Markdown`);
+        res.send({ success: true });
+    } catch (error) {
+        res.status(500).send({ success: false });
     }
 });
 
@@ -24,4 +26,4 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
