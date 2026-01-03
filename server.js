@@ -7,21 +7,24 @@ const app = express();
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
+// Firebase initialization
 if (!admin.apps.length) {
-    admin.initializeApp({ databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/" });
+    admin.initializeApp({
+        databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/"
+    });
 }
 const db = admin.database();
 
-// রিয়েল-টাইম গেম লজিক
+// গেম লুপ সিস্টেম
 let gameState = { status: 'waiting', timer: 10, multiplier: 1.0, crashAt: 2.0 };
 
-function runGame() {
+setInterval(() => {
     if (gameState.status === 'waiting') {
         gameState.timer--;
         if (gameState.timer <= 0) {
             gameState.status = 'flying';
             gameState.multiplier = 1.0;
-            gameState.crashAt = parseFloat((Math.random() * 4 + 1.1).toFixed(2));
+            gameState.crashAt = parseFloat((Math.random() * 4 + 1.2).toFixed(2));
         }
     } else if (gameState.status === 'flying') {
         gameState.multiplier += 0.05;
@@ -31,18 +34,18 @@ function runGame() {
         }
     }
     db.ref('game_state').set(gameState);
-}
-setInterval(runGame, 1000);
+}, 1000);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/notify', async (req, res) => {
-    const { type, details } = req.query;
-    const text = `🔔 *${type.toUpperCase()} REQUEST*\n\n${details}`;
+app.get('/api/notify', async (req, res) => {
+    const { type, msg } = req.query;
     try {
-        await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(text)}&parse_mode=Markdown`);
-        res.send("OK");
-    } catch (e) { res.status(500).send("Fail"); }
+        await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            params: { chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown' }
+        });
+        res.status(200).send("OK");
+    } catch (err) { res.status(500).send("Error"); }
 });
 
 app.listen(process.env.PORT || 10000);
