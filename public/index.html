@@ -3,248 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crash Pro Ultra Max</title>
+    <title>Crash Pro Ultimate Loop</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --bg: #0b0e11; --card: #1e2329; --yellow: #f0b90b; --green: #02c076; --red: #f84960; --text: #eaecef; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        /* টপ বার */
+        .top-bar { width: 100%; background: var(--card); padding: 10px; display: flex; justify-content: space-between; position: fixed; top: 0; z-index: 1000; border-bottom: 1px solid #333; }
         
-        body { 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-        }
+        /* গেম এরিয়া */
+        .game-view { flex-grow: 1; position: relative; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 250px; }
+        #multiplier { font-size: 60px; color: var(--green); font-weight: 800; z-index: 5; }
+        #status-msg { font-size: 18px; color: var(--yellow); margin-top: 10px; font-weight: bold; }
 
-        /* ১. নিখুঁত টপ বার */
-        .top-bar { 
-            width: 100%; 
-            background: var(--card); 
-            padding: 10px 15px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid #333; 
-            position: fixed; 
-            top: 0; 
-            z-index: 1000; 
-        }
-        .user-info { color: var(--yellow); font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; }
-
-        /* ২. গেম এরিয়া ও অ্যানিমেশন */
-        .game-view { 
-            flex-grow: 1; 
-            position: relative; 
-            width: 100%; 
-            background: radial-gradient(circle at center, #1c2127 0%, #0b0e11 100%); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            margin-top: 45px; /* টপ বারের জায়গা */
-            margin-bottom: 230px; /* নিচের কন্ট্রোল প্যানেলের জায়গা */
-        }
-        
-        #multiplier { 
-            font-size: 60px; 
-            color: var(--green); 
-            font-weight: 800; 
-            z-index: 5; 
-            text-shadow: 0 0 20px rgba(2, 192, 118, 0.3); 
-        }
-
-        #plane-container { position: absolute; left: 10%; bottom: 25%; z-index: 10; transition: all 0.1s linear; }
+        /* প্লেন */
+        #plane-container { position: absolute; left: 10%; bottom: 25%; z-index: 10; display: none; }
         #plane { font-size: 45px; transform: rotate(-10deg); }
-        .smoke { position: absolute; width: 8px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: smokeAnim 0.6s forwards; }
-        @keyframes smokeAnim { to { transform: translate(-50px, 25px) scale(0); opacity: 0; } }
-        .blast-effect { animation: blast 0.5s ease-out forwards; }
-        @keyframes blast { 0% { transform: scale(1); } 50% { transform: scale(2); opacity: 0.7; } 100% { transform: scale(0); opacity: 0; } }
 
-        /* ৩. ফিক্সড কন্ট্রোল প্যানেল (সব বাটন এখানে) */
-        .bottom-controls { 
-            background: var(--card); 
-            width: 100%; 
-            padding: 15px; 
-            border-radius: 20px 20px 0 0; 
-            border-top: 1px solid #333; 
-            position: fixed; 
-            bottom: 0; 
-            z-index: 1000; 
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
-        }
-
-        .bet-box { width: 100%; padding: 12px; background: #2b3139; border: 1px solid #474d57; color: white; border-radius: 10px; margin-bottom: 10px; font-size: 16px; outline: none; }
-        
-        .main-btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: bold; font-size: 18px; cursor: pointer; margin-bottom: 12px; }
+        /* কন্ট্রোল প্যানেল */
+        .bottom-panel { background: var(--card); width: 100%; padding: 15px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; z-index: 1000; border-top: 1px solid #333; }
+        .bet-box { width: 100%; padding: 12px; background: #2b3139; border: 1px solid #474d57; color: white; border-radius: 10px; margin-bottom: 10px; }
+        .main-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 18px; cursor: pointer; }
         .btn-bet { background: var(--green); color: white; }
-        .btn-cashout { background: var(--yellow); color: black; display: none; }
+        
+        /* বাটন গ্রিড */
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .menu-btn { background: #2b3139; color: var(--text); border: none; padding: 12px; border-radius: 8px; font-size: 14px; cursor: pointer; }
 
-        /* ৪. বাটন গ্রিড (এখানেই সব ৪টি বাটন থাকবে) */
-        .menu-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 10px; 
-            width: 100%;
-        }
-        .menu-btn { 
-            background: #2b3139; 
-            color: var(--text); 
-            border: none; 
-            padding: 12px; 
-            border-radius: 8px; 
-            font-weight: 600; 
-            font-size: 14px; 
-            cursor: pointer;
-            text-align: center;
-        }
-        .menu-btn:active { background: #3e4550; }
-
-        /* ৫. পপআপ ওভারলে */
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; }
-        .popup-card { background: var(--card); width: 90%; padding: 20px; border-radius: 15px; border: 1px solid var(--yellow); position: relative; }
-        .close-x { position: absolute; right: 15px; top: 15px; font-size: 22px; color: var(--red); cursor: pointer; }
+        /* অ্যাড পোস্টার / আইফ্রেম পপআপ */
+        .ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
+        .ad-box { width: 90%; height: 70%; background: #fff; border-radius: 10px; overflow: hidden; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; }
+        #skip-btn { display: none; margin-top: 15px; background: var(--yellow); color: #000; padding: 10px 30px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        #ad-timer { color: #fff; margin-top: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div class="user-info">👤 <span id="uName">Player</span></div>
-        <div class="user-info" style="color:#fff">💰 <span id="uBalance">10,000</span></div>
+        <span>👤 <span id="uName">Player</span></span>
+        <span>💰 <span id="uBalance">10,000</span></span>
     </div>
 
-    <div class="game-view" id="viewport">
-        <div id="multiplier">1.00x</div>
-        <div id="plane-container">
-            <div id="plane">✈️</div>
-        </div>
+    <div class="game-view">
+        <div id="multiplier">Next Round...</div>
+        <div id="status-msg">Waiting for Bets</div>
+        <div id="plane-container"><div id="plane">✈️</div></div>
     </div>
 
-    <div class="bottom-controls">
-        <input type="number" id="bAmount" class="bet-box" placeholder="Enter Amount...">
-        <button class="main-btn btn-bet" id="bBtn" onclick="handleAction('bet')">PLACE BET</button>
-        <button class="main-btn btn-cashout" id="cBtn" onclick="handleAction('cashout')">CASH OUT</button>
+    <div class="bottom-panel">
+        <input type="number" id="bAmount" class="bet-box" placeholder="Enter Bet Points">
+        <button class="main-btn btn-bet" id="betBtn" onclick="placeBet()">PLACE BET</button>
 
         <div class="menu-grid">
-            <button class="menu-btn" onclick="adThenOpen('Deposit')">Deposit</button>
-            <button class="menu-btn" onclick="adThenOpen('Withdraw') Bryan">Withdraw</button>
-            <button class="menu-btn" onclick="adThenOpen('History')">History</button>
-            <button class="menu-btn" onclick="adThenOpen('Profile')">Profile</button>
+            <button class="menu-btn" onclick="showAdPopup('Deposit')">Deposit</button>
+            <button class="menu-btn" onclick="showAdPopup('Withdraw')">Withdraw</button>
+            <button class="menu-btn" onclick="showAdPopup('History')">History</button>
+            <button class="menu-btn" onclick="showAdPopup('Profile')">Profile</button>
         </div>
     </div>
 
-    <div id="popOverlay" class="overlay">
-        <div class="popup-card">
-            <span class="close-x" onclick="closePop()">✕</span>
-            <h3 id="popTitle" style="margin-top:0; color:var(--yellow)">Title</h3>
-            <div id="popBody"></div>
+    <div id="adOverlay" class="ad-overlay">
+        <div class="ad-box">
+            <iframe id="adFrame" src=""></iframe>
         </div>
+        <div id="ad-timer">Wait <span id="sec">15</span> seconds...</div>
+        <div id="skip-btn" onclick="closeAd()">SKIP AD</div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.ready();
-
-        const user = tg.initDataUnsafe?.user;
-        document.getElementById('uName').innerText = user ? user.first_name : "Player";
-
-        const ads = [
-            "https://otieu.com/4/10315373", 
-            "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57"
-        ];
         
-        let count = 1.00;
-        let running = true;
-        let pX = 10, pY = 25;
+        const ads = ["https://otieu.com/4/10315373", "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57"];
+        let isBettingOpen = true;
+        let gameRunning = false;
 
-        function runGame() {
-            running = true;
-            count = 1.00;
-            pX = 10; pY = 25;
-            const mult = document.getElementById('multiplier');
-            const pc = document.getElementById('plane-container');
-            const p = document.getElementById('plane');
+        // গেম সাইকেল (১০ সেকেন্ড কাউন্টডাউন)
+        function startCountdown() {
+            isBettingOpen = true;
+            gameRunning = false;
+            let timeLeft = 10;
+            document.getElementById('plane-container').style.display = 'none';
+            document.getElementById('multiplier').style.color = 'var(--yellow)';
             
-            p.innerText = "✈️";
-            p.className = "";
-            mult.style.color = "var(--green)";
-            
-            const loop = setInterval(() => {
-                if(!running) { clearInterval(loop); return; }
-                
+            let timer = setInterval(() => {
+                document.getElementById('multiplier').innerText = timeLeft + "s";
+                document.getElementById('status-msg').innerText = "Place Your Bets!";
+                timeLeft--;
+                if(timeLeft < 0) {
+                    clearInterval(timer);
+                    startGame();
+                }
+            }, 1000);
+        }
+
+        function startGame() {
+            isBettingOpen = false;
+            gameRunning = true;
+            let count = 1.00;
+            let pX = 10, pY = 25;
+            document.getElementById('multiplier').style.color = 'var(--green)';
+            document.getElementById('plane-container').style.display = 'block';
+            document.getElementById('status-msg').innerText = "Plane is Flying!";
+
+            let flyLoop = setInterval(() => {
+                if(!gameRunning) { clearInterval(flyLoop); return; }
                 count += 0.01;
-                mult.innerText = count.toFixed(2) + "x";
+                document.getElementById('multiplier').innerText = count.toFixed(2) + "x";
                 
-                pX += 0.12; pY += 0.08;
-                pc.style.left = pX + "%";
-                pc.style.bottom = pY + "%";
-                
-                createSmoke();
+                pX += 0.15; pY += 0.1;
+                document.getElementById('plane-container').style.left = pX + "%";
+                document.getElementById('plane-container').style.bottom = pY + "%";
 
-                if(count > (Math.random() * 4 + 1.1).toFixed(2)) {
-                    running = false;
-                    p.innerText = "💥";
-                    p.classList.add('blast-effect');
-                    mult.style.color = "var(--red)";
-                    setTimeout(runGame, 3000);
+                if(count > (Math.random() * 4 + 1.2).toFixed(2)) {
+                    gameRunning = false;
+                    document.getElementById('plane').innerText = "💥";
+                    document.getElementById('multiplier').style.color = 'var(--red)';
+                    document.getElementById('status-msg').innerText = "CRASHED!";
+                    setTimeout(() => {
+                        document.getElementById('plane').innerText = "✈️";
+                        startCountdown();
+                    }, 3000);
                 }
             }, 100);
         }
 
-        function createSmoke() {
-            const s = document.createElement('div');
-            s.className = 'smoke';
-            s.style.left = "0px"; s.style.bottom = "0px";
-            document.getElementById('plane-container').appendChild(s);
-            setTimeout(() => s.remove(), 500);
-        }
+        // অ্যাড সিস্টেম
+        function showAdPopup(type) {
+            const overlay = document.getElementById('adOverlay');
+            const frame = document.getElementById('adFrame');
+            const skip = document.getElementById('skip-btn');
+            const timerMsg = document.getElementById('ad-timer');
+            let sec = 15;
 
-        // বাটন ও অ্যাড ফিক্স
-        function adThenOpen(type) {
-            tg.showConfirm(`View 2 short ads to open ${type}?`, (ok) => {
-                if(ok) {
-                    tg.openLink(ads[0]);
-                    setTimeout(() => {
-                        tg.openLink(ads[1]);
-                        openUI(type);
-                    }, 1000);
+            // র‍্যান্ডম অ্যাড লিঙ্ক লোড
+            frame.src = ads[Math.floor(Math.random() * ads.length)];
+            overlay.style.display = 'flex';
+            skip.style.display = 'none';
+            timerMsg.style.display = 'block';
+
+            let adTimer = setInterval(() => {
+                sec--;
+                document.getElementById('sec').innerText = sec;
+                if(sec <= 0) {
+                    clearInterval(adTimer);
+                    timerMsg.style.display = 'none';
+                    skip.style.display = 'block';
                 }
-            });
+            }, 1000);
         }
 
-        function openUI(type) {
-            const over = document.getElementById('popOverlay');
-            document.getElementById('popTitle').innerText = type;
-            let html = `<p>Welcome to ${type} section.</p>`;
-            if(type === 'Deposit') html += `<input class="bet-box" placeholder="Enter TxID"><button class="main-btn btn-bet" onclick="closePop()">Submit Request</button>`;
-            if(type === 'Withdraw') html += `<input class="bet-box" placeholder="Address"><button class="main-btn btn-bet" style="background:var(--red)" onclick="closePop()">Withdraw</button>`;
-            
-            document.getElementById('popBody').innerHTML = html;
-            over.style.display = 'flex';
+        function closeAd() {
+            document.getElementById('adOverlay').style.display = 'none';
+            document.getElementById('adFrame').src = "";
+            tg.showAlert("Action Unlocked!");
         }
 
-        function closePop() { document.getElementById('popOverlay').style.display = 'none'; }
-
-        function handleAction(type) {
-            const b = document.getElementById('bBtn');
-            const c = document.getElementById('cBtn');
-            if(type === 'bet') {
-                if(!document.getElementById('bAmount').value) { tg.showAlert("Please enter amount!"); return; }
-                b.style.display = 'none';
-                c.style.display = 'block';
-            } else {
-                b.style.display = 'block';
-                c.style.display = 'none';
-                tg.showAlert("You cashed out at " + document.getElementById('multiplier').innerText);
+        function placeBet() {
+            if(!isBettingOpen) {
+                tg.showAlert("Betting Closed! Wait for next round.");
+                return;
             }
+            tg.showAlert("Bet Placed Successfully!");
         }
 
-        runGame();
+        startCountdown();
     </script>
 </body>
-</html>
+    </html>
