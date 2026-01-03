@@ -1,103 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Earn Pro Elite</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earn Pro Crash</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        :root { --green: #02c076; --yellow: #f0b90b; --red: #f84960; --card: #1e2329; }
-        body { background: #0b0e11; color: white; font-family: sans-serif; margin: 0; text-align: center; }
-        .header { background: var(--card); padding: 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #333; }
-        .game-area { height: 250px; display: flex; align-items: center; justify-content: center; font-size: 50px; font-weight: bold; color: var(--green); }
-        .controls { padding: 20px; background: var(--card); border-radius: 20px 20px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; }
-        .nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
-        .nav-btn { background: #2b3139; padding: 10px 5px; border-radius: 8px; font-size: 10px; border: 1px solid #444; }
-        input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; }
+        body { margin: 0; background: #0b0e11; color: white; font-family: sans-serif; text-align: center; }
+        .card { background: #1e2329; margin: 15px; padding: 20px; border-radius: 12px; border-bottom: 4px solid #f39c12; }
+        #multiplier { font-size: 3.5rem; font-weight: bold; color: #f39c12; margin: 20px 0; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        input { width: 90%; padding: 12px; border-radius: 8px; border: none; background: #2b3139; color: white; margin-bottom: 10px; }
+        button { padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white; }
+        .btn-bet { background: #02c076; grid-column: span 2; font-size: 1.1rem; }
+        .btn-cash { background: #f39c12; grid-column: span 2; display: none; font-size: 1.1rem; }
+        .btn-side { background: #474d57; }
+        .btn-task { background: #e02424; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 99; padding-top: 50px; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div>💰 Bal: <span id="bal">0.00</span> TK</div>
-    <div>ID: <span id="uidText">...</span></div>
-</div>
-
-<div class="game-area" id="multDisplay">1.00x</div>
-
-<div class="controls">
-    <input type="number" id="betAmt" placeholder="Bet Amount (Min 10)">
-    <button id="betBtn" class="btn" style="background:var(--green);" onclick="handleBet()">PLACE BET</button>
-    <button id="cashBtn" class="btn" style="background:var(--yellow); color:black; display:none;" onclick="handleCashout()">CASH OUT</button>
-    
-    <div class="nav-grid">
-        <div class="nav-btn" onclick="alert('Send to: 017XXXXXXXX')">Deposit</div>
-        <div class="nav-btn" onclick="alert('Min Withdraw: 500 TK')">Withdraw</div>
-        <div class="nav-btn" onclick="alert('No History')">History</div>
-        <div class="nav-btn" onclick="alert('Refer Link: t.me/bot?start=123')">Refer</div>
+    <div class="card">
+        <div>Balance: ৳<span id="bal">50.00</span></div>
+        <div id="status">Wait for round...</div>
+        <div id="multiplier">1.00x</div>
     </div>
-</div>
+
+    <div class="controls">
+        <input type="number" id="bet-amt" placeholder="Bet Amount (Min ৳10)">
+        <button id="bet-btn" class="btn-bet" onclick="placeBet()">PLACE BET</button>
+        <button id="cash-btn" class="btn-cash" onclick="cashOut()">CASH OUT</button>
+        
+        <button class="btn-side" onclick="openPop('dep')">DEPOSIT</button>
+        <button class="btn-side" onclick="openPop('with')">WITHDRAW</button>
+        <button class="btn-task" onclick="doTask()">DAILY TASK (<span id="tc">0</span>/40)</button>
+        <button class="btn-side" onclick="copyRef()">REFER</button>
+    </div>
+
+    <div id="modal" class="modal">
+        <div style="background:#1e2329; width:80%; margin:auto; padding:20px; border-radius:10px;">
+            <h3 id="m-title">Title</h3>
+            <div id="m-body"></div>
+            <br>
+            <button onclick="document.getElementById('modal').style.display='none'">Close</button>
+        </div>
+    </div>
 
 <script>
-    const firebaseConfig = { databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com/" };
+    const firebaseConfig = {
+        apiKey: "AIzaSyBTu-63HAarfY0w2BZYFldwbPAxgIEIm8c",
+        authDomain: "earn-pro-5d8a8.firebaseapp.com",
+        projectId: "earn-pro-5d8a8",
+        storageBucket: "earn-pro-5d8a8.firebasestorage.app",
+        messagingSenderId: "1090324824300",
+        appId: "1:1090324824300:web:ce2815eee7837856fee5c9"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let uid = "user_" + Math.floor(Math.random() * 9000); // টেলিগ্রাম আইডি এখানে আসবে
-    document.getElementById('uidText').innerText = uid;
+    let balance = 5.0;
+    let betAmt = 0;
+    let hasBet = false;
+    let tasks = 0;
+    const RENDER_URL = "https://your-app-name.onrender.com"; // আপনার রেন্ডার ইউআরএল দিন
 
-    let balance = 0, bet = 0, isCashed = false, currentStatus = "";
-
-    // Sync Balance
-    db.ref('users/' + uid).on('value', snap => {
-        if(snap.val()) { balance = snap.val().bal; document.getElementById('bal').innerText = balance.toFixed(2); }
-        else { db.ref('users/' + uid).set({ bal: 50 }); }
-    });
-
-    // Sync Game
-    db.ref('game_state').on('value', snap => {
-        const state = snap.val();
-        currentStatus = state.status;
-        const disp = document.getElementById('multDisplay');
-        const bBtn = document.getElementById('betBtn');
-        const cBtn = document.getElementById('cashBtn');
-
-        if(state.status === 'waiting') {
-            disp.innerText = state.timer + "s"; disp.style.color = "var(--yellow)";
-            bBtn.style.display = "block"; cBtn.style.display = "none"; isCashed = false;
-        } else if(state.status === 'flying') {
-            disp.innerText = state.multiplier.toFixed(2) + "x"; disp.style.color = "var(--green)";
-            if(bet > 0 && !isCashed) { bBtn.style.display = "none"; cBtn.style.display = "block"; cBtn.innerText = "CASH OUT ("+(bet*state.multiplier).toFixed(2)+")"; }
+    db.ref('game_state').on('value', (s) => {
+        const data = s.val();
+        const m = document.getElementById('multiplier');
+        const st = document.getElementById('status');
+        
+        if(data.status === 'waiting') {
+            st.innerText = "Next Round in: " + data.timer + "s";
+            m.style.color = "white";
+            document.getElementById('bet-btn').disabled = false;
+            document.getElementById('cash-btn').style.display = "none";
+        } else if(data.status === 'flying') {
+            m.innerText = data.multiplier + "x";
+            st.innerText = "Plane is Flying...";
+            if(hasBet) document.getElementById('cash-btn').style.display = "block";
         } else {
-            disp.innerText = "CRASHED"; disp.style.color = "var(--red)";
-            bBtn.style.display = "block"; cBtn.style.display = "none"; bet = 0;
+            m.innerText = "CRASHED";
+            m.style.color = "#ff4d4d";
+            hasBet = false;
+            document.getElementById('cash-btn').style.display = "none";
         }
     });
 
-    function handleBet() {
-        let a = parseFloat(document.getElementById('betAmt').value);
-        if(a >= 10 && balance >= a && currentStatus === 'waiting') {
-            bet = a; balance -= a;
-            db.ref('users/' + uid).update({ bal: balance });
-            document.getElementById('betBtn').innerText = "BET PLACED";
-        } else { alert("Insufficient Balance or Round Started!"); }
+    function placeBet() {
+        const a = parseFloat(document.getElementById('bet-amt').value);
+        if(a >= 10 && a <= balance) {
+            balance -= a; betAmt = a; hasBet = true;
+            document.getElementById('bal').innerText = balance.toFixed(2);
+            alert("Bet Placed!");
+        }
     }
 
-    function handleCashout() {
-        if(isCashed) return;
-        isCashed = true;
-        db.ref('game_state/multiplier').once('value', s => {
-            let win = bet * s.val();
-            balance += win;
-            db.ref('users/' + uid).update({ bal: balance });
-            alert("Won: " + win.toFixed(2));
-            bet = 0;
-            document.getElementById('cashBtn').style.display = "none";
-            document.getElementById('betBtn').style.display = "block";
-        });
+    function cashOut() {
+        if(!hasBet) return;
+        const curM = parseFloat(document.getElementById('multiplier').innerText);
+        balance += (betAmt * curM);
+        hasBet = false;
+        document.getElementById('bal').innerText = balance.toFixed(2);
+        document.getElementById('cash-btn').style.display = "none";
+        alert("Success!");
     }
+
+    function doTask() {
+        if(tasks >= 40) return alert("Task Limit Reached");
+        const url = tasks % 2 === 0 ? "https://otieu.com/4/10315373" : "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57";
+        window.open(url, '_blank');
+        setTimeout(() => {
+            tasks++; document.getElementById('tc').innerText = tasks;
+            if(tasks === 40) { balance += 10; document.getElementById('bal').innerText = balance.toFixed(2); }
+        }, 20000);
+    }
+
+    function openPop(t) {
+        document.getElementById('modal').style.display='block';
+        document.getElementById('m-title').innerText = t === 'dep' ? 'Deposit' : 'Withdraw';
+        document.getElementById('m-body').innerHTML = `<input id="p-num" placeholder="Number"><input id="p-amt" placeholder="Amount"><button style="background:#02c076" onclick="sub('${t}')">Submit</button>`;
+    }
+
+    async function sub(t) {
+        const num = document.getElementById('p-num').value;
+        const amt = document.getElementById('p-amt').value;
+        await fetch(`${RENDER_URL}/request`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type: t, userId: 'User123', amount: amt, method: 'Bkash', number: num})
+        });
+        alert("Sent!");
+        document.getElementById('modal').style.display='none';
+    }
+
+    function copyRef() { alert("Refer Link: https://t.me/YourBot?start=123"); }
 </script>
 </body>
-</html>
+    </html>
