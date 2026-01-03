@@ -1,0 +1,46 @@
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+/* Plane Animation Shake when Crash */
+@keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    30% { transform: translate(3px, 2px) rotate(0deg); }
+    50% { transform: translate(-1px, 2px) rotate(1deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+.crashed {
+    animation: shake 0.5s;
+    color: #ef4444 !important;
+}
+
+/* Gradient Backgrounds */
+.bg-game {
+    background: radial-gradient(circle at center, #1e293b 0%, #0b111b 100%);
+}
+
+.tab-active {
+    border-bottom: 2px solid #eab308;
+    color: #eab308;
+}
+
+/* Glassmorphism for Modals */
+.modal-content {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Button Pulse for Cashout */
+.btn-pulse {
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+         }
