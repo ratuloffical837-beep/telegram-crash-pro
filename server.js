@@ -10,13 +10,14 @@ const CHAT_ID = process.env.CHAT_ID;
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/send-telegram', async (req, res) => {
-    const { type, user, data } = req.query;
-    const msg = `🎰 *REQUEST: ${type}*%0A👤 User: ${user}%0A📄 Data: ${data}`;
+    const { type, data } = req.query;
+    const message = `🔔 *NEW REQUEST*%0A📌 Type: ${type}%0A📄 Details: ${data}`;
+    
     try {
-        await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${msg}&parse_mode=Markdown`);
-        res.status(200).send("Done");
+        await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${message}&parse_mode=Markdown`);
+        res.status(200).send("OK");
     } catch (e) {
-        res.status(500).send("Err");
+        res.status(500).send("Error");
     }
 });
 
