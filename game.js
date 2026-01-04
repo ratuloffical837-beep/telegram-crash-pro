@@ -102,13 +102,27 @@ function handleGameAction() {
     }
 }
 
-// Modal functions...
+document.getElementById('main-btn').onclick = handleGameAction;
+
 function openModal(type) {
     const modal = document.getElementById('modal-box');
     const body = document.getElementById('modal-body');
     modal.classList.add('active');
 
-    if (type === 'task') {
+    if (type === 'deposit') {
+        body.innerHTML = `<h2 class="text-xl font-bold mb-4 text-blue-400">Deposit</h2>
+            <p class="text-xs mb-2">Bkash/Nagad: 01757257580</p>
+            <input id="d-amt" type="number" placeholder="Amount" class="w-full bg-slate-800 p-3 rounded mb-2">
+            <input id="d-trx" type="text" placeholder="TrxID" class="w-full bg-slate-800 p-3 rounded mb-2 text-xs">
+            <input type="file" id="d-ss" class="w-full text-[10px] mb-4">
+            <button onclick="alert('Submitted!')" class="w-full bg-blue-600 py-3 rounded-xl font-bold">SUBMIT</button>`;
+    } else if (type === 'withdraw') {
+        body.innerHTML = `<h2 class="text-xl font-bold mb-4 text-red-500">Withdraw</h2>
+            <select class="w-full bg-slate-800 p-3 rounded mb-2"><option>Bkash</option><option>Nagad</option></select>
+            <input type="number" placeholder="Number" class="w-full bg-slate-800 p-3 rounded mb-2">
+            <input type="number" placeholder="Amount (Min 500)" class="w-full bg-slate-800 p-3 rounded mb-4">
+            <button onclick="alert('Request Sent!')" class="w-full bg-red-600 py-3 rounded-xl font-bold">WITHDRAW</button>`;
+    } else if (type === 'task') {
         db.ref('users/' + uid + '/tasks').once('value', s => {
             let done = s.val() || 0;
             body.innerHTML = `
@@ -134,8 +148,7 @@ function openModal(type) {
             <div id="history-content"></div>
         `;
         loadMyHistory();
-    } // deposit/withdraw same as original
-    // ... (deposit & withdraw modal same as your original code)
+    }
 }
 
 function watchAd() {
@@ -154,7 +167,7 @@ function watchAd() {
             db.ref('users/' + uid).transaction(u => {
                 if (u && (u.tasks || 0) < 60) {
                     u.tasks = (u.tasks || 0) + 1;
-                    u.balance += 10 / 60; // ~0.1667
+                    u.balance += 10 / 60;
                 }
                 return u;
             });
