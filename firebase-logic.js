@@ -2,125 +2,104 @@ const firebaseConfig = { databaseURL: "https://earn-pro-5d8a8-default-rtdb.fireb
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const tg = window.Telegram.WebApp;
-const userId = tg.initDataUnsafe.user?.id || "000000";
+
+// ইউজার ডেটা সংগ্রহ (টেলিগ্রাম থেকে অটো)
+const user = tg.initDataUnsafe.user || { id: "Guest", first_name: "User" };
+const uid = user.id;
 let userBalance = 0;
 
-// User initial data load
-db.ref('users/' + userId).on('value', snap => {
-    const u = snap.val();
-    if (!u) {
-        db.ref('users/' + userId).set({ balance: 50.00, tasks: 0 });
+document.getElementById('user-id-display').innerText = "@" + (user.username || uid);
+document.getElementById('user-name').innerText = user.first_name;
+document.getElementById('user-initial').innerText = user.first_name[0];
+
+// একজনের ব্যালেন্স শুধু সেই দেখবে (UID লজিক)
+db.ref('users/' + uid).on('value', snap => {
+    const d = snap.val();
+    if(!d) {
+        db.ref('users/' + uid).set({ balance: 50.00, tasks: 0 });
     } else {
-        userBalance = u.balance;
+        userBalance = d.balance;
         document.getElementById('balance').innerText = userBalance.toFixed(2);
-        document.getElementById('user-id').innerText = userId;
     }
 });
 
-function openTab(type) {
-    const modal = document.getElementById('modal');
-    const content = document.getElementById('modal-content');
-    modal.classList.add('active');
+function openModal(type) {
+    const m = document.getElementById('modal-box');
+    const b = document.getElementById('modal-body');
+    m.classList.add('active');
 
-    if (type === 'deposit') {
-        content.innerHTML = `
-            <h2 class="text-xl font-bold text-yellow-500 mb-4">Deposit Money</h2>
-            <p class="text-[10px] text-gray-400 mb-2">Send Money to: 01757257580 (Bkash/Nagad)</p>
-            <select id="dep-method" class="w-full bg-slate-800 p-3 rounded mb-2">
-                <option>Bkash Personal</option>
-                <option>Nagad Personal</option>
-            </select>
-            <input id="dep-amt" type="number" placeholder="Amount (৳)" class="w-full bg-slate-800 p-3 rounded mb-2">
-            <input id="dep-trx" type="text" placeholder="Transaction ID" class="w-full bg-slate-800 p-3 rounded mb-2">
-            <label class="text-xs text-blue-400">Upload Screenshot:</label>
-            <input id="dep-ss" type="file" accept="image/*" class="w-full text-xs mt-1 mb-4">
-            <button onclick="submitDep()" class="w-full bg-yellow-600 py-3 rounded-xl font-bold">Submit Deposit</button>
+    if(type === 'deposit') {
+        b.innerHTML = `
+            <h2 class="text-xl font-bold mb-4 text-blue-400">Deposit</h2>
+            <p class="text-xs text-gray-400 mb-2">Send Money: <b>01757257580</b></p>
+            <select id="d-meth" class="w-full bg-slate-800 p-3 rounded mb-2"><option>Bkash</option><option>Nagad</option></select>
+            <input id="d-amt" type="number" placeholder="Amount" class="w-full bg-slate-800 p-3 rounded mb-2">
+            <input id="d-trx" type="text" placeholder="Transaction ID" class="w-full bg-slate-800 p-3 rounded mb-2">
+            <input type="file" accept="image/*" class="w-full text-xs mb-4">
+            <button onclick="alert('Sent!')" class="w-full bg-blue-600 py-3 rounded-xl font-bold">SUBMIT</button>
         `;
-    } else if (type === 'withdraw') {
-        content.innerHTML = `
-            <h2 class="text-xl font-bold text-red-500 mb-4">Withdraw</h2>
-            <select id="w-method" class="w-full bg-slate-800 p-3 rounded mb-2">
-                <option>Bkash Personal</option>
-                <option>Nagad Personal</option>
-            </select>
-            <input id="w-num" type="number" placeholder="Account Number" class="w-full bg-slate-800 p-3 rounded mb-2">
-            <input id="w-amt" type="number" placeholder="Amount (Min ৳500)" class="w-full bg-slate-800 p-3 rounded mb-4">
-            <button onclick="submitWith()" class="w-full bg-red-600 py-3 rounded-xl font-bold">Request Withdraw</button>
-        `;
-    } else if (type === 'task') {
-        db.ref('users/' + userId).once('value', snap => {
-            let done = snap.val().tasks || 0;
-            content.innerHTML = `
-                <h2 class="text-xl font-bold mb-2">Daily Task (60 Ads)</h2>
-                <p class="text-xs mb-4">Earn ৳10 by watching ads. (${done}/60)</p>
-                <div id="ad-trigger" onclick="runAdSystem()" class="bg-blue-600 h-24 rounded-2xl flex items-center justify-center font-bold text-lg cursor-pointer">WATCH VIDEO AD</div>
+    } else if(type === 'task') {
+        db.ref('users/'+uid).once('value', s => {
+            let done = s.val().tasks || 0;
+            b.innerHTML = `
+                <h2 class="text-xl font-bold mb-2">Daily Task (${done}/60)</h2>
+                <div id="ad-box" onclick="startRealAd()" class="h-32 bg-indigo-900 rounded-2xl flex items-center justify-center font-bold text-lg cursor-pointer border-2 border-indigo-500">WATCH VIDEO AD</div>
+                <p class="text-[10px] mt-2 text-center text-gray-500">প্রতিটি এডের জন্য ১০ পয়েন্ট</p>
             `;
         });
-    } else if (type === 'history') {
-        loadLogs(content);
+    } else if(type === 'withdraw') {
+        b.innerHTML = `
+            <h2 class="text-xl font-bold mb-4 text-red-500">Withdraw</h2>
+            <input id="w-num" type="number" placeholder="Mobile Number" class="w-full bg-slate-800 p-3 rounded mb-2">
+            <input id="w-amt" type="number" placeholder="Min ৳500" class="w-full bg-slate-800 p-3 rounded mb-4">
+            <button onclick="alert('Processing...')" class="w-full bg-red-600 py-3 rounded-xl font-bold">WITHDRAW</button>
+        `;
+    } else if(type === 'history') {
+        loadMyHistory(b);
+    } else if(type === 'refer') {
+        b.innerHTML = `<h2 class="text-xl font-bold mb-2">Refer</h2><p class="text-sm">Link: t.me/bot?start=${uid}</p>`;
     }
 }
 
-function runAdSystem() {
-    const trigger = document.getElementById('ad-trigger');
+function startRealAd() {
+    const box = document.getElementById('ad-box');
     let timer = 15;
-    trigger.onclick = null;
-    trigger.innerText = `Ad Loading... ${timer}s`;
-    
-    let countdown = setInterval(() => {
+    box.onclick = null; // বারবার ক্লিক বন্ধ
+    let inter = setInterval(() => {
         timer--;
-        trigger.innerText = `Watching Ad... ${timer}s`;
-        if (timer <= 0) {
-            clearInterval(countdown);
-            completeAd();
+        box.innerText = `AD PLAYING... ${timer}s`;
+        if(timer <= 0) {
+            clearInterval(inter);
+            finishAd();
         }
     }, 1000);
 }
 
-function completeAd() {
-    db.ref('users/' + userId).transaction(u => {
-        if (u && (u.tasks || 0) < 60) {
+function finishAd() {
+    db.ref('users/' + uid).transaction(u => {
+        if(u) {
             u.tasks = (u.tasks || 0) + 1;
-            u.balance += 0.16; // 60 ads ≈ 10 Taka
+            u.balance += 0.16;
         }
         return u;
     }, () => {
-        alert("Success! Reward added.");
-        openTab('task');
+        alert("Reward Added!");
+        openModal('task');
     });
 }
 
-function submitDep() {
-    const amt = document.getElementById('dep-amt').value;
-    addHistory("Deposit", `Pending ৳${amt}`, "yellow");
-    alert("Deposit request submitted! Wait for admin approval.");
-    closeTab();
-}
-
-function submitWith() {
-    const amt = document.getElementById('w-amt').value;
-    if (userBalance >= amt && amt >= 500) {
-        userBalance -= amt;
-        updateDBBalance(userBalance);
-        addHistory("Withdraw", `Pending ৳${amt}`, "red");
-        alert("Withdrawal request sent!");
-        closeTab();
-    } else { alert("Min ৳500 and check balance!"); }
-}
-
-function loadLogs(div) {
-    db.ref('users/' + userId + '/history').limitToLast(10).once('value', snap => {
-        let h = '<h2 class="text-lg font-bold mb-3">Logs</h2>';
+function loadMyHistory(div) {
+    db.ref('users/' + uid + '/history').limitToLast(10).once('value', snap => {
+        let h = '<h2 class="text-lg font-bold mb-3">My History</h2>';
         snap.forEach(c => {
-            h += `<div class="flex justify-between text-[10px] border-b border-slate-800 py-2">
-                <span>${c.val().type}</span>
-                <span class="text-${c.val().color}-500">${c.val().msg}</span>
+            h += `<div class="flex justify-between border-b border-slate-800 py-2 text-[10px]">
+                <span>${c.val().type}</span><span class="text-${c.val().color}-500">${c.val().msg}</span>
             </div>`;
         });
-        div.innerHTML = h || "No history yet.";
+        div.innerHTML = h || "No History";
     });
 }
 
-function updateDBBalance(b) { db.ref('users/' + userId).update({ balance: b }); }
-function addHistory(type, msg, color) { db.ref('users/' + userId + '/history').push({ type, msg, color }); }
-function closeTab() { document.getElementById('modal').classList.remove('active'); }
+function updateBalance(b) { db.ref('users/' + uid).update({ balance: b }); }
+function logHistory(type, msg, color) { db.ref('users/' + uid + '/history').push({ type, msg, color }); }
+function closeModal() { document.getElementById('modal-box').classList.remove('active'); }
