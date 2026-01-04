@@ -13,24 +13,20 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const tg = window.Telegram.WebApp;
 
-const user = tg.initDataUnsafe.user || { id: 999999, first_name: "Guest" };
+const user = tg.initDataUnsafe.user || { id: 888888, first_name: "Player" };
 const uid = user.id.toString();
 let userBalance = 0;
-let referredBy = new URLSearchParams(tg.initDataUnsafe.start_param || "").get("ref");
 
 db.ref('users/' + uid).on('value', snap => {
     let d = snap.val() || {};
     if (!snap.exists()) {
         db.ref('users/' + uid).set({ balance: 0.00, tasks: 0, wins: 0, losses: 0 });
-        if (referredBy) {
-            db.ref('users/' + referredBy + '/balance').transaction(b => (b || 0) + 2);
-        }
     } else {
         userBalance = d.balance || 0;
         document.getElementById('balance').innerText = userBalance.toFixed(2);
         document.getElementById('user-name').innerText = user.first_name;
-        document.getElementById('user-initial').innerText = user.first_name[0].toUpperCase();
         document.getElementById('user-id-display').innerText = "@" + (user.username || uid);
+        document.getElementById('user-initial').innerText = user.first_name[0].toUpperCase();
     }
 });
 
@@ -41,9 +37,8 @@ function updateBalance(amount) {
 function logRound(win, amount, multiplier) {
     const type = win ? "Win" : "Loss";
     const color = win ? "green" : "red";
-    db.ref('users/' + uid + '/history').push({ type, msg: `\( {win ? "Won" : "Lost"} ৳ \){Math.abs(amount).toFixed(2)} @ ${multiplier}x`, color, time: Date.now() });
-    db.ref('users/' + uid + '/' + (win ? "wins" : "losses")).transaction(c => (c || 0) + 1);
+    db.ref('users/' + uid + '/history').push({ type, msg: `${win ? "Won" : "Lost"} ৳${Math.abs(amount).toFixed(2)} @ ${multiplier}x`, color, time: Date.now() });
     if (win) {
         db.ref('globalLeaderboard').push({ uid, name: user.first_name, profit: amount, multiplier, time: Date.now() });
     }
-                          }
+      }
