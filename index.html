@@ -10,7 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="bg-[#07090b] text-white overflow-hidden">
     <div class="flex justify-between items-center p-4">
         <div class="flex items-center gap-2">
             <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-lg" id="user-initial">U</div>
@@ -26,17 +26,17 @@
 
     <div class="game-screen flex flex-col items-center justify-center relative">
         <div id="game-status" class="absolute top-5 text-[10px] uppercase text-blue-400 font-bold tracking-tighter">Connecting...</div>
-        <div id="multiplier">1.00x</div>
-        <div id="plane" class="plane-icon">✈️</div>
+        <div id="multiplier" class="text-5xl font-black transition-all">1.00x</div>
+        <div id="plane" class="plane-icon" style="display: none;">✈️</div>
         <div id="explosion" class="hidden text-6xl">💥</div>
     </div>
 
     <div class="p-5 mt-2">
         <input type="number" id="bet-amount" value="10" min="10" class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-center text-xl font-bold text-yellow-500 outline-none mb-3">
-        <button id="main-btn" class="w-full bg-green-600 h-16 rounded-2xl font-black text-2xl shadow-xl transition-all">PLACE BET</button>
+        <button id="main-btn" class="w-full bg-green-600 h-16 rounded-2xl font-black text-2xl shadow-xl transition-all active:scale-95">PLACE BET</button>
     </div>
 
-    <div class="bottom-nav grid grid-cols-5 gap-2">
+    <div class="grid grid-cols-5 gap-2 px-4">
         <button onclick="openModal('deposit')" class="bg-slate-800 py-3 rounded-xl flex flex-col items-center text-[10px]">💰<span>Deposit</span></button>
         <button onclick="openModal('withdraw')" class="bg-slate-800 py-3 rounded-xl flex flex-col items-center text-[10px]">💸<span>Withdraw</span></button>
         <button onclick="openModal('history')" class="bg-slate-800 py-3 rounded-xl flex flex-col items-center text-[10px]">📜<span>History</span></button>
@@ -52,6 +52,6 @@
     </div>
 
     <script src="firebase-logic.js"></script>
-    <script src="game-engine.js"></script>
+    <script src="game.js"></script>
 </body>
-    </html>
+            </html>
