@@ -8,19 +8,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: #07090b; color: white; font-family: sans-serif; overflow: hidden; }
-        .game-screen { background: radial-gradient(circle at bottom left, #1a202c, #07090b); height: 320px; position: relative; border-radius: 0 0 30px 30px; overflow: hidden; border-bottom: 2px solid #2d3748; }
-        #multiplier { font-size: 70px; font-weight: 900; font-style: italic; z-index: 20; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
-        .plane-icon { position: absolute; bottom: 30px; left: 10%; font-size: 45px; transition: all 0.05s linear; z-index: 15; transform: rotate(-10deg); filter: drop-shadow(0 0 10px #3182ce); }
-        .smoke { position: absolute; width: 12px; height: 12px; background: rgba(255,255,255,0.15); border-radius: 50%; animation: smokeAnim 0.8s forwards; }
-        @keyframes smokeAnim { to { transform: translate(-40px, 20px); opacity: 0; } }
-        .bottom-nav { position: fixed; bottom: 20px; left: 0; right: 0; padding: 0 15px; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 20px; align-items: center; justify-content: center; }
-        .modal.active { display: flex; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Same as before, only small changes in modal for history tabs -->
     <div class="flex justify-between items-center p-4">
         <div class="flex items-center gap-2">
             <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-lg" id="user-initial">U</div>
@@ -34,15 +25,16 @@
         </div>
     </div>
 
-    <div class="game-screen flex flex-col items-center justify-center">
+    <div class="game-screen flex flex-col items-center justify-center relative">
         <div id="game-status" class="absolute top-5 text-[10px] uppercase text-blue-400 font-bold tracking-tighter">Connecting...</div>
         <div id="multiplier">1.00x</div>
-        <div id="plane" class="plane-icon" style="display: none;">✈️</div>
+        <div id="plane" class="plane-icon">✈️</div>
+        <div id="explosion" class="hidden text-6xl">💥</div>
     </div>
 
     <div class="p-5 mt-2">
-        <input type="number" id="bet-amount" value="10" class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-center text-xl font-bold text-yellow-500 outline-none mb-3">
-        <button id="main-btn" onclick="handleGameAction()" class="w-full bg-green-600 h-16 rounded-2xl font-black text-2xl shadow-xl active:scale-95 transition-all">PLACE BET</button>
+        <input type="number" id="bet-amount" value="10" min="10" class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-center text-xl font-bold text-yellow-500 outline-none mb-3">
+        <button id="main-btn" class="w-full bg-green-600 h-16 rounded-2xl font-black text-2xl shadow-xl transition-all">PLACE BET</button>
     </div>
 
     <div class="bottom-nav grid grid-cols-5 gap-2">
@@ -63,4 +55,4 @@
     <script src="firebase-logic.js"></script>
     <script src="game-engine.js"></script>
 </body>
-    </html>
+</html>
