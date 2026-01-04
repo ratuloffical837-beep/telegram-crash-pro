@@ -1,4 +1,14 @@
-const firebaseConfig = { databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com" };
+const firebaseConfig = {
+  apiKey: "AIzaSyBTu-63HAarfY0w2BZYFldwbPAxgIEIm8c",
+  authDomain: "earn-pro-5d8a8.firebaseapp.com",
+  projectId: "earn-pro-5d8a8",
+  storageBucket: "earn-pro-5d8a8.firebasestorage.app",
+  messagingSenderId: "1090324824300",
+  appId: "1:1090324824300:web:ce2815eee7837856fee5c9",
+  measurementId: "G-6817R7G4YH",
+  databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com"
+};
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const tg = window.Telegram.WebApp;
@@ -12,7 +22,6 @@ db.ref('users/' + uid).on('value', snap => {
     let d = snap.val() || {};
     if (!snap.exists()) {
         db.ref('users/' + uid).set({ balance: 0.00, tasks: 0, wins: 0, losses: 0 });
-        // Refer reward
         if (referredBy) {
             db.ref('users/' + referredBy + '/balance').transaction(b => (b || 0) + 2);
         }
@@ -34,8 +43,7 @@ function logRound(win, amount, multiplier) {
     const color = win ? "green" : "red";
     db.ref('users/' + uid + '/history').push({ type, msg: `\( {win ? "Won" : "Lost"} ৳ \){Math.abs(amount).toFixed(2)} @ ${multiplier}x`, color, time: Date.now() });
     db.ref('users/' + uid + '/' + (win ? "wins" : "losses")).transaction(c => (c || 0) + 1);
-    // Global leaderboard
     if (win) {
         db.ref('globalLeaderboard').push({ uid, name: user.first_name, profit: amount, multiplier, time: Date.now() });
     }
-           }
+                          }
