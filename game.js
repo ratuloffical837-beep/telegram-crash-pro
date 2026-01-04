@@ -1,114 +1,82 @@
-// Firebase Configuration (From your data)
-const firebaseConfig = {
-  apiKey: "AIzaSyBTu-63HAarfY0w2BZYFldwbPAxgIEIm8c",
-  authDomain: "earn-pro-5d8a8.firebaseapp.com",
-  databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com",
-  projectId: "earn-pro-5d8a8",
-  storageBucket: "earn-pro-5d8a8.firebasestorage.app",
-  appId: "1:1090324824300:web:ce2815eee7837856fee5c9"
-};
+let currentStatus = "waiting";
+let currentMult = 1.0;
+let myBet = 0;
+let hasCasheout = false;
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const tg = window.Telegram.WebApp;
-tg.expand();
-
-// User Data
-let user = tg.initDataUnsafe.user || { id: "12345", first_name: "Tester" };
-let userBalance = 0;
-let currentBet = 0;
-let isBetting = false;
-
-// UI Elements
-const balanceEl = document.getElementById('balance');
-const multEl = document.getElementById('multiplier');
-const betBtn = document.getElementById('betBtn');
-const plane = document.getElementById('plane');
-
-// 1. Sync Game State (Server Time Simulation)
-// সকল ইউজারের জন্য একই সাথে ডাটাবেস থেকে টাইম আসবে
+// Firebase Listeners
 db.ref('gameState').on('value', (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
 
-    if (data.status === "waiting") {
-        updateWaitingUI(data.timer);
-    } else if (data.status === "flying") {
-        startFlyingUI(data.multiplier);
-    } else {
-        crashUI(data.multiplier);
-    }
+    currentStatus = data.status;
+    currentMult = data.multiplier;
+
+    updateUI(data);
 });
 
-// 2. Betting Logic
-betBtn.onclick = () => {
-    if (!isBetting) {
-        let amount = parseInt(document.getElementById('betInput').value);
-        if (amount >= 10 && userBalance >= amount) {
-            placeBet(amount);
-        } else {
-            alert("Insufficient Balance or Min Bet ৳10");
+function updateUI(data) {
+    const multDisp = document.getElementById('multiplier');
+    const timerDisp = document.getElementById('timer-display');
+    const planeCont = document.getElementById('plane-container');
+    const mainBtn = document.getElementById('main-btn');
+
+    multDisp.innerText = data.multiplier.toFixed(2) + "x";
+
+    if (data.status === "waiting") {
+        timerDisp.innerText = "Next Round: " + data.timer + "s";
+        planeCont.style.display = "none";
+        multDisp.style.color = "white";
+        if (myBet === 0) {
+            mainBtn.innerText = "PLACE BET";
+            mainBtn.className = "w-full bg-green-600 py-4 rounded-xl font-bold text-xl";
+            hasCasheout = false;
         }
-    } else {
-        cashOut();
-    }
-};
-
-function placeBet(amt) {
-    currentBet = amt;
-    userBalance -= amt;
-    updateBalanceDB(userBalance);
-    isBetting = true;
-    betBtn.innerText = "CASH OUT (x1.00)";
-    betBtn.classList.replace('bg-green-600', 'bg-yellow-600');
-}
-
-// 3. 20% Profit Logic (House Edge)
-// এটি ডাটাবেসে ব্যাকগ্রাউন্ডে চেক করবে: 
-// Total Bet vs Total Potential Payout. যখন পেআউট ৮০% ছাড়াবে, তখন প্লেন ক্রাশ করবে।
-
-function openPanel(type) {
-    const modal = document.getElementById('modal');
-    const body = document.getElementById('modalBody');
-    const title = document.getElementById('modalTitle');
-    modal.classList.remove('hidden');
-    title.innerText = type;
-
-    if (type === 'deposit') {
-        body.innerHTML = `
-            <div class="bg-gray-800 p-4 rounded-xl">
-                <p class="text-sm text-gray-300">বিকাশ/নগদ (Personal):</p>
-                <p class="text-xl font-bold text-yellow-500 mb-4">01757257580</p>
-                <input id="depAmt" type="number" placeholder="৳ Amount (Min 150)" class="w-full p-3 bg-black rounded-lg mb-2">
-                <input id="depNum" type="text" placeholder="Sender Number" class="w-full p-3 bg-black rounded-lg mb-4">
-                <p class="text-[10px] mb-2">Upload Screenshot (Proof):</p>
-                <input id="depFile" type="file" accept="image/*" class="mb-4">
-                <button onclick="submitDeposit()" class="w-full bg-blue-600 py-3 rounded-lg font-bold">Submit Payment</button>
-            </div>
-        `;
-    }
-
-    if (type === 'task') {
-        body.innerHTML = `
-            <div class="grid grid-cols-1 gap-3">
-                <p class="text-center text-xs text-gray-400">প্রতিটি এডে ৫ সেকেন্ড থাকুন। ৪০টি দেখলে ১০ টাকা।</p>
-                <button onclick="watchAd('monetag')" class="bg-purple-600 p-4 rounded-xl font-bold">Monetag Ad (20 Left)</button>
-                <button onclick="watchAd('adstar')" class="bg-indigo-600 p-4 rounded-xl font-bold">Adsterra Ad (20 Left)</button>
-            </div>
-        `;
+    } 
+    else if (data.status === "flying") {
+        timerDisp.innerText = "LIVE FLYING";
+        planeCont.style.display = "block";
+        if (myBet > 0 && !hasCasheout) {
+            let winAmt = (myBet * data.multiplier).toFixed(2);
+            mainBtn.innerText = "CASHOUT ৳" + winAmt;
+            mainBtn.className = "w-full bg-yellow-500 py-4 rounded-xl font-bold text-xl text-black btn-pulse";
+        }
+    } 
+    else if (data.status === "crashed") {
+        timerDisp.innerText = "CRASHED!";
+        multDisp.style.color = "#ef4444";
+        planeCont.classList.add('crashed');
+        if (myBet > 0 && !hasCasheout) {
+            myBet = 0; // Lost
+            addHistory("Bet", "Lost", "red");
+        }
+        myBet = 0;
+        setTimeout(() => planeCont.classList.remove('crashed'), 2000);
     }
 }
 
-// Ad Logic
-function watchAd(provider) {
-    const link = provider === 'monetag' 
-        ? "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57" 
-        : "https://www.effectivegatecpm.com/e0xpfuhe?key=fb81fa455f0ff2d6a8fa09ce5d18dd57";
-    
-    window.open(link, '_blank');
-    // টাস্ক কাউন্টার এবং ফায়ারবেস আপডেট লজিক এখানে হবে
-}
+function handleMainButton() {
+    const amtInput = document.getElementById('bet-amount');
+    const amt = parseFloat(amtInput.value);
 
-function closePanel() {
-    document.getElementById('modal').classList.add('hidden');
-            }
+    if (currentStatus === "waiting" && myBet === 0) {
+        if (amt >= 10 && userBalance >= amt) {
+            myBet = amt;
+            userBalance -= amt;
+            updateBalanceDB(userBalance);
+            document.getElementById('main-btn').innerText = "BET PLACED";
+            document.getElementById('main-btn').className = "w-full bg-gray-600 py-4 rounded-xl font-bold";
+        } else {
+            alert("Insufficient Balance or Min ৳10");
+        }
+    } 
+    else if (currentStatus === "flying" && myBet > 0 && !hasCasheout) {
+        let win = myBet * currentMult;
+        userBalance += win;
+        updateBalanceDB(userBalance);
+        addHistory("Bet", `Won ৳${win.toFixed(2)}`, "green");
+        hasCasheout = true;
+        myBet = 0;
+        document.getElementById('main-btn').innerText = "SUCCESS!";
+        document.getElementById('main-btn').className = "w-full bg-blue-600 py-4 rounded-xl font-bold";
+    }
+}
