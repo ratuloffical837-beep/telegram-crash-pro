@@ -1,102 +1,90 @@
-// Firebase Config (Replace with yours)
-const firebaseConfig = {
-    databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com"
-};
+const firebaseConfig = { databaseURL: "https://earn-pro-5d8a8-default-rtdb.firebaseio.com" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const tg = window.Telegram.WebApp;
-tg.expand();
-
-const userId = tg.initDataUnsafe.user?.id || "654321";
+const userId = tg.initDataUnsafe.user?.id || "000000";
 let userBalance = 0;
 
-function showPanel(type) {
-    const body = document.getElementById('dynamic-body');
-    document.getElementById('modal-overlay').classList.remove('hidden');
+// প্রথমবার ঢুকলে ৫০ টাকা বোনাস
+db.ref('users/' + userId).on('value', snap => {
+    const data = snap.val();
+    if (!data) {
+        db.ref('users/' + userId).set({ balance: 50.00, tasks: 0 });
+    } else {
+        userBalance = data.balance;
+        document.getElementById('balance').innerText = userBalance.toFixed(2);
+        document.getElementById('user-id').innerText = userId;
+    }
+});
 
-    if (type === 'referral') {
-        const refLink = `https://t.me/crashgamepro_bot?start=${userId}`;
+function openPanel(type) {
+    document.getElementById('modal-bg').classList.remove('hidden');
+    const body = document.getElementById('panel-body');
+    
+    if (type === 'deposit') {
         body.innerHTML = `
-            <h2 class="text-xl font-bold text-yellow-500 mb-4">Refer & Earn</h2>
-            <p class="text-sm text-gray-300 mb-4">Invite friends and get ৳2 per friend!</p>
-            <input id="refInput" value="${refLink}" class="w-full bg-slate-900 p-3 rounded mb-4 text-xs" readonly>
-            <button onclick="copyLink()" class="w-full bg-yellow-600 py-2 rounded">Copy Link</button>
+            <h2 class="text-xl font-bold mb-4">Deposit Money</h2>
+            <p class="text-xs text-gray-400 mb-2">Send Money to: <b>01757257580</b> (Bkash/Nagad)</p>
+            <input id="dep-amt" type="number" placeholder="Amount" class="w-full bg-slate-900 p-3 rounded mb-2">
+            <input id="dep-trx" type="text" placeholder="TrxID" class="w-full bg-slate-900 p-3 rounded mb-2">
+            <p class="text-[10px] mb-1">Upload Screenshot:</p>
+            <input id="dep-file" type="file" class="text-xs mb-4">
+            <button onclick="submitDeposit()" class="w-full bg-blue-600 py-3 rounded font-bold">Submit Request</button>
         `;
-    } else if (type === 'task') {
-        renderTasks();
     } else if (type === 'history') {
-        renderHistory();
-    } else if (type === 'deposit') {
-        body.innerHTML = `<h2>Deposit</h2><p>Send ৳150+ to 017xxxxxxxx (Bkash/Nagad) then msg Admin.</p>`;
+        renderHistory(body);
+    } else if (type === 'task') {
+        renderTasks(body);
+    } else if (type === 'withdraw') {
+        body.innerHTML = `<h2 class="text-xl font-bold mb-4">Withdraw</h2><input id="w-amt" type="number" placeholder="Amount" class="w-full bg-slate-900 p-3 rounded mb-4"><button onclick="alert('Admin will process soon')" class="w-full bg-red-600 py-3 rounded">Withdraw Now</button>`;
+    } else if (type === 'refer') {
+        body.innerHTML = `<h2 class="text-xl font-bold mb-2">Refer</h2><p class="text-xs">Your Link: t.me/Bot?start=${userId}</p>`;
     }
 }
 
-function renderTasks() {
-    db.ref('users/' + userId).once('value', snapshot => {
-        const data = snapshot.val();
-        const done = data.tasksDone || 0;
-        document.getElementById('dynamic-body').innerHTML = `
-            <h2 class="text-xl font-bold mb-2 text-blue-400">Daily Task</h2>
-            <p class="mb-4">Complete 60 Ads: ${done}/60</p>
-            <div id="ad-container" class="h-40 bg-black rounded flex items-center justify-center mb-4 cursor-pointer" onclick="startAd()">
-                <span id="ad-text">Click to Watch Ad</span>
-            </div>
+function renderTasks(body) {
+    db.ref('users/' + userId).once('value', snap => {
+        let done = snap.val().tasks || 0;
+        body.innerHTML = `
+            <h2 class="text-xl font-bold mb-2">Daily Tasks</h2>
+            <p class="text-xs mb-4">Complete 60 Ads to get ৳10 (${done}/60)</p>
+            <div onclick="startAd()" class="bg-indigo-600 p-8 rounded-xl text-center cursor-pointer font-bold">WATCH AD</div>
         `;
     });
 }
 
 function startAd() {
-    const adText = document.getElementById('ad-text');
-    let sec = 10;
-    adText.innerText = `Ad Loading... ${sec}s`;
-    let interval = setInterval(() => {
-        sec--;
-        adText.innerText = `Watch Ad... ${sec}s`;
-        if (sec <= 0) {
-            clearInterval(interval);
-            completeTask();
+    alert("Ad Loading... (Simulation)");
+    db.ref('users/' + userId).transaction(u => {
+        if (u && (u.tasks || 0) < 60) {
+            u.tasks = (u.tasks || 0) + 1;
+            u.balance += 0.16; // 60 ads ≈ 10 taka
         }
-    }, 1000);
+        return u;
+    }, () => openPanel('task'));
 }
 
-function completeTask() {
-    db.ref('users/' + userId).transaction(user => {
-        if (user) {
-            if ((user.tasksDone || 0) < 60) {
-                user.tasksDone = (user.tasksDone || 0) + 1;
-                user.balance += 0.15; // 60 ads = 10 taka
-            }
-        }
-        return user;
-    }, () => {
-        alert("Ad Complete! ৳0.15 Added.");
-        renderTasks();
-    });
+function submitDeposit() {
+    const amt = document.getElementById('dep-amt').value;
+    const trx = document.getElementById('dep-trx').value;
+    saveHistory("Deposit", `Pending ৳${amt}`, "yellow");
+    alert("Request Sent to Admin!");
+    closePanel();
 }
 
-function renderHistory() {
-    db.ref('users/' + userId + '/history').limitToLast(10).once('value', snapshot => {
-        let html = '<h2 class="text-xl font-bold mb-4">Recent History</h2>';
-        snapshot.forEach(child => {
-            const h = child.val();
-            html += `<div class="flex justify-between border-b border-slate-700 py-2 text-sm">
-                <span>${h.type}</span>
-                <span class="text-${h.color}-500">${h.msg}</span>
+function renderHistory(body) {
+    db.ref('users/' + userId + '/history').limitToLast(10).once('value', snap => {
+        let htm = '<h2 class="text-xl font-bold mb-4">History</h2>';
+        snap.forEach(c => {
+            htm += `<div class="flex justify-between border-b border-slate-700 py-2 text-xs">
+                <span>${c.val().type}</span>
+                <span class="text-${c.val().color}-500">${c.val().msg}</span>
             </div>`;
         });
-        document.getElementById('dynamic-body').innerHTML = html;
+        body.innerHTML = htm || "No History";
     });
 }
 
-function addHistory(type, msg, color) {
-    db.ref('users/' + userId + '/history').push({ type, msg, color, time: Date.now() });
-}
-
-function copyLink() {
-    const copyText = document.getElementById("refInput");
-    copyText.select();
-    document.execCommand("copy");
-    alert("Link Copied!");
-}
-
-function closePanel() { document.getElementById('modal-overlay').classList.add('hidden'); }
+function updateBalance(b) { db.ref('users/' + userId).update({ balance: b }); }
+function saveHistory(type, msg, color) { db.ref('users/' + userId + '/history').push({ type, msg, color }); }
+function closePanel() { document.getElementById('modal-bg').classList.add('hidden'); }
