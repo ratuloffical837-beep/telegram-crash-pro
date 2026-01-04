@@ -37,7 +37,7 @@ function renderTasks() {
         const done = data.tasksDone || 0;
         document.getElementById('dynamic-body').innerHTML = `
             <h2 class="text-xl font-bold mb-2 text-blue-400">Daily Task</h2>
-            <p class="mb-4">Complete 40 Ads: ${done}/40</p>
+            <p class="mb-4">Complete 60 Ads: ${done}/60</p>
             <div id="ad-container" class="h-40 bg-black rounded flex items-center justify-center mb-4 cursor-pointer" onclick="startAd()">
                 <span id="ad-text">Click to Watch Ad</span>
             </div>
