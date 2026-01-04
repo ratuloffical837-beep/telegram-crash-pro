@@ -1,82 +1,92 @@
-let currentStatus = "waiting";
-let currentMult = 1.0;
-let myBet = 0;
-let hasCasheout = false;
+let status = "waiting";
+let multiplier = 1.0;
+let myCurrentBet = 0;
+let cashedOut = false;
 
-// Firebase Listeners
+// Firebase Listener for Game State
 db.ref('gameState').on('value', (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
-
-    currentStatus = data.status;
-    currentMult = data.multiplier;
-
+    
+    status = data.status;
+    multiplier = data.multiplier;
     updateUI(data);
 });
 
 function updateUI(data) {
-    const multDisp = document.getElementById('multiplier');
-    const timerDisp = document.getElementById('timer-display');
-    const planeCont = document.getElementById('plane-container');
-    const mainBtn = document.getElementById('main-btn');
+    const multText = document.getElementById('multiplier');
+    const timerText = document.getElementById('timer-display');
+    const plane = document.getElementById('plane');
+    const btn = document.getElementById('main-btn');
 
-    multDisp.innerText = data.multiplier.toFixed(2) + "x";
+    multText.innerText = data.multiplier.toFixed(2) + "x";
 
     if (data.status === "waiting") {
-        timerDisp.innerText = "Next Round: " + data.timer + "s";
-        planeCont.style.display = "none";
-        multDisp.style.color = "white";
-        if (myBet === 0) {
-            mainBtn.innerText = "PLACE BET";
-            mainBtn.className = "w-full bg-green-600 py-4 rounded-xl font-bold text-xl";
-            hasCasheout = false;
+        timerText.innerText = `NEXT ROUND IN ${data.timer}s`;
+        multText.style.color = "white";
+        plane.classList.add('hidden');
+        if (myCurrentBet === 0) {
+            btn.innerText = "Place Bet";
+            btn.className = "w-full bg-green-600 py-4 rounded-xl font-bold text-xl uppercase";
+            cashedOut = false;
         }
-    } 
-    else if (data.status === "flying") {
-        timerDisp.innerText = "LIVE FLYING";
-        planeCont.style.display = "block";
-        if (myBet > 0 && !hasCasheout) {
-            let winAmt = (myBet * data.multiplier).toFixed(2);
-            mainBtn.innerText = "CASHOUT ৳" + winAmt;
-            mainBtn.className = "w-full bg-yellow-500 py-4 rounded-xl font-bold text-xl text-black btn-pulse";
+    } else if (data.status === "flying") {
+        timerText.innerText = "PLANE IS FLYING";
+        plane.classList.remove('hidden');
+        movePlane(data.multiplier); // এনিমেশন শুরু
+        if (myCurrentBet > 0 && !cashedOut) {
+            let profit = (myCurrentBet * data.multiplier).toFixed(2);
+            btn.innerText = `Cash Out ৳${profit}`;
+            btn.className = "w-full bg-yellow-500 text-black py-4 rounded-xl font-bold text-xl uppercase";
         }
-    } 
-    else if (data.status === "crashed") {
-        timerDisp.innerText = "CRASHED!";
-        multDisp.style.color = "#ef4444";
-        planeCont.classList.add('crashed');
-        if (myBet > 0 && !hasCasheout) {
-            myBet = 0; // Lost
-            addHistory("Bet", "Lost", "red");
+    } else if (data.status === "crashed") {
+        timerText.innerText = "CRASHED!";
+        multText.style.color = "#ff4444";
+        if (myCurrentBet > 0 && !cashedOut) {
+            saveHistory("Crash", `Lost ৳${myCurrentBet}`, "red");
+            myCurrentBet = 0;
         }
-        myBet = 0;
-        setTimeout(() => planeCont.classList.remove('crashed'), 2000);
+        myCurrentBet = 0;
     }
 }
 
-function handleMainButton() {
-    const amtInput = document.getElementById('bet-amount');
-    const amt = parseFloat(amtInput.value);
+function movePlane(m) {
+    const plane = document.getElementById('plane');
+    let x = (m - 1) * 30; // মাল্টিপ্লায়ার অনুযায়ী ডানে সরবে
+    let y = (m - 1) * 20; // মাল্টিপ্লায়ার অনুযায়ী উপরে উঠবে
+    plane.style.left = `${Math.min(x + 10, 70)}%`;
+    plane.style.bottom = `${Math.min(y + 20, 60)}%`;
+    createSmokeEffect();
+}
 
-    if (currentStatus === "waiting" && myBet === 0) {
-        if (amt >= 10 && userBalance >= amt) {
-            myBet = amt;
+function createSmokeEffect() {
+    const box = document.getElementById('plane-box');
+    const plane = document.getElementById('plane');
+    const smoke = document.createElement('div');
+    smoke.className = 'smoke';
+    smoke.style.left = plane.style.left;
+    smoke.style.bottom = plane.style.bottom;
+    box.appendChild(smoke);
+    setTimeout(() => smoke.remove(), 1000);
+}
+
+function handleMainAction() {
+    const amt = parseFloat(document.getElementById('bet-amount').value);
+    if (status === "waiting" && myCurrentBet === 0) {
+        if (userBalance >= amt && amt >= 10) {
+            myCurrentBet = amt;
             userBalance -= amt;
-            updateBalanceDB(userBalance);
-            document.getElementById('main-btn').innerText = "BET PLACED";
-            document.getElementById('main-btn').className = "w-full bg-gray-600 py-4 rounded-xl font-bold";
-        } else {
-            alert("Insufficient Balance or Min ৳10");
-        }
-    } 
-    else if (currentStatus === "flying" && myBet > 0 && !hasCasheout) {
-        let win = myBet * currentMult;
+            updateBalance(userBalance);
+            document.getElementById('main-btn').innerText = "Bet Placed";
+            document.getElementById('main-btn').className = "w-full bg-gray-600 py-4 rounded-xl font-bold text-xl uppercase";
+        } else { alert("Insufficient Balance!"); }
+    } else if (status === "flying" && myCurrentBet > 0 && !cashedOut) {
+        let win = myCurrentBet * multiplier;
         userBalance += win;
-        updateBalanceDB(userBalance);
-        addHistory("Bet", `Won ৳${win.toFixed(2)}`, "green");
-        hasCasheout = true;
-        myBet = 0;
-        document.getElementById('main-btn').innerText = "SUCCESS!";
-        document.getElementById('main-btn').className = "w-full bg-blue-600 py-4 rounded-xl font-bold";
+        updateBalance(userBalance);
+        saveHistory("Win", `Won ৳${win.toFixed(2)}`, "green");
+        cashedOut = true;
+        myCurrentBet = 0;
+        document.getElementById('main-btn').innerText = "Success!";
     }
-}
+                }
