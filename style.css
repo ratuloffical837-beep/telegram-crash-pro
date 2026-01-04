@@ -9,40 +9,29 @@
 
 .plane-icon {
     position: absolute;
-    bottom: 30px;
-    left: 10%;
     font-size: 50px;
-    transition: all 0.1s linear;
+    transition: all 0.5s linear;
     filter: drop-shadow(0 0 15px #3182ce);
 }
 
-#explosion {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    animation: explode 0.8s forwards;
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
 }
 
-@keyframes explode {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(2); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(4); }
-}
-
-.smoke {
-    position: absolute;
-    width: 15px;
-    height: 15px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 50%;
-    animation: smokeAnim 1s forwards;
-}
-
-@keyframes smokeAnim {
-    to { transform: translate(-60px, 40px); opacity: 0; }
-}
-
-body { background: #07090b; color: white; font-family: sans-serif; overflow: hidden; }
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 20px; align-items: center; justify-content: center; }
 .modal.active { display: flex; }
+
+.pulse-anim {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
